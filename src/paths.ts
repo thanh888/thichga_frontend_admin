@@ -1,0 +1,23 @@
+export const paths = {
+  home: '/',
+  auth: { signIn: '/auth/sign-in', signUp: '/auth/sign-up', resetPassword: '/auth/reset-password' },
+  dashboard: {
+    overview: '/dashboard',
+    account: '/dashboard/account',
+    customers: '/dashboard/customers',
+    admin_account: '/dashboard/admin_account',
+    user_account: '/dashboard/user_account',
+    bet_room: '/dashboard/bet_room',
+    type_deposit: '/dashboard/type_deposit',
+    normal_deposit: '/dashboard/normal_deposit',
+    auto_deposit: '/dashboard/auto_deposit',
+    withdraw: '/dashboard/withdraw',
+    bank: '/dashboard/bank',
+    post: '/dashboard/post',
+    link_support: '/dashboard/link_support',
+    banner: '/dashboard/banner',
+    integrations: '/dashboard/integrations',
+    settings: '/dashboard/settings',
+  },
+  errors: { notFound: '/errors/not-found' },
+} as const;
