@@ -18,16 +18,18 @@ import {
 } from '@mui/material';
 
 // Định nghĩa interface cho dữ liệu bảng
-interface Betsession {
+interface DepositHistoryFormData {
   code: string;
-  status: string;
+  username: string;
+  money: number;
   created_at: string;
-  profit: number;
+  status: string;
+  admin_accept: string;
 }
 
 // Định nghĩa interface cho cột bảng
 interface Column {
-  id: keyof Betsession | 'action';
+  id: keyof DepositHistoryFormData | 'action';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
@@ -36,39 +38,48 @@ interface Column {
 
 const columns: Column[] = [
   { id: 'code', label: 'Mã (Code)', minWidth: 100, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'username', label: 'Tên người dùng', minWidth: 120, align: 'left' },
   {
-    id: 'profit',
-    label: 'Lợi nhuận (VND)',
+    id: 'money',
+    label: 'Số tiền (VND)',
     minWidth: 120,
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
+  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 120, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
 // Hàm tạo dữ liệu mẫu
-function createData(code: string, status: string, created_at: string, profit: number): Betsession {
-  return { code, status, created_at, profit };
+function createData(
+  code: string,
+  username: string,
+  money: number,
+  created_at: string,
+  status: string,
+  admin_accept: string
+): DepositHistoryFormData {
+  return { code, username, money, created_at, status, admin_accept };
 }
 
-const initialData: Betsession[] = [
-  createData('BET001', 'Pending', '2025-04-23 10:00', 500),
-  createData('BET002', 'Won', '2025-04-23 11:00', 1000),
-  createData('BET003', 'Lost', '2025-04-23 12:00', -200),
-  createData('BET004', 'Pending', '2025-04-23 13:00', 0),
-  createData('BET005', 'Won', '2025-04-23 14:00', 750),
-  createData('BET006', 'Lost', '2025-04-23 15:00', -300),
+const initialData: DepositHistoryFormData[] = [
+  createData('BET001', 'user1', 500, '2025-04-23 10:00', 'Pending', 'Waiting'),
+  createData('BET002', 'user2', 1000, '2025-04-23 11:00', 'Won', 'Accepted'),
+  createData('BET003', 'user3', 200, '2025-04-23 12:00', 'Lost', 'Rejected'),
+  createData('BET004', 'user4', 0, '2025-04-23 13:00', 'Pending', 'Waiting'),
+  createData('BET005', 'user5', 750, '2025-04-23 14:00', 'Won', 'Accepted'),
+  createData('BET006', 'user6', 300, '2025-04-23 15:00', 'Lost', 'Rejected'),
 ];
 
-const BetSessionComponent: React.FC = () => {
+const DepositHistoryTable: React.FC = () => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof Betsession | ''>('');
+  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData | ''>('');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<Betsession[]>(initialData);
+  const [filteredData, setFilteredData] = React.useState<DepositHistoryFormData[]>(initialData);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,20 +87,23 @@ const BetSessionComponent: React.FC = () => {
     setSearchTerm(value);
     setPage(0); // Reset về trang 1 khi tìm kiếm
     const filtered = initialData.filter(
-      (row) => row.code.toLowerCase().includes(value) || row.status.toLowerCase().includes(value)
+      (row) =>
+        row.code.toLowerCase().includes(value) ||
+        row.username.toLowerCase().includes(value) ||
+        row.status.toLowerCase().includes(value)
     );
     setFilteredData(filtered);
   };
 
   // Hàm xử lý sắp xếp
-  const handleSort = (field: keyof Betsession) => {
+  const handleSort = (field: keyof DepositHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
     const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
     setSortField(field);
     setSortOrder(newOrder);
 
     const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'profit') {
+      if (field === 'money') {
         return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
       }
       return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
@@ -127,7 +141,7 @@ const BetSessionComponent: React.FC = () => {
     >
       <Paper sx={{ width: '100%' }}>
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Phiên cược hiện tại
+          Danh sách tất cả yêu cầu nạp tiền
         </Typography>
         <TextField
           label="Tìm kiếm"
@@ -139,7 +153,7 @@ const BetSessionComponent: React.FC = () => {
           sx={{ mb: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-session-table">
+          <Table stickyHeader aria-label="bet-history-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
@@ -148,7 +162,7 @@ const BetSessionComponent: React.FC = () => {
                       <TableSortLabel
                         active={sortField === column.id}
                         direction={sortField === column.id ? sortOrder : 'asc'}
-                        onClick={() => handleSort(column.id as keyof Betsession)}
+                        onClick={() => handleSort(column.id as keyof DepositHistoryFormData)}
                       >
                         {column.label}
                       </TableSortLabel>
@@ -172,7 +186,7 @@ const BetSessionComponent: React.FC = () => {
                         </TableCell>
                       );
                     }
-                    const value = row[column.id as keyof Betsession];
+                    const value = row[column.id as keyof DepositHistoryFormData];
                     return (
                       <TableCell key={column.id} align={column.align}>
                         {column.format && typeof value === 'number' ? column.format(value) : value}
@@ -198,4 +212,4 @@ const BetSessionComponent: React.FC = () => {
   );
 };
 
-export default BetSessionComponent;
+export default DepositHistoryTable;
