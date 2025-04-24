@@ -18,16 +18,19 @@ import {
 } from '@mui/material';
 
 // Định nghĩa interface cho dữ liệu bảng
-interface Betsession {
-  code: string;
-  status: string;
+interface WithdrawHistoryFormData {
+  username: string;
+  bank: string;
+  money: number;
+  note: string;
   created_at: string;
-  profit: number;
+  status: string;
+  admin_accept: string;
 }
 
 // Định nghĩa interface cho cột bảng
 interface Column {
-  id: keyof Betsession | 'action';
+  id: keyof WithdrawHistoryFormData | 'action';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
@@ -35,40 +38,51 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã (Code)', minWidth: 100, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'username', label: 'Tên người dùng', minWidth: 100, align: 'left' },
+  { id: 'bank', label: 'Ngân hàng', minWidth: 120, align: 'left' },
   {
-    id: 'profit',
-    label: 'Lợi nhuận (VND)',
+    id: 'money',
+    label: 'Số tiền (VND)',
     minWidth: 120,
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
+  { id: 'note', label: 'Ghi chú', minWidth: 150, align: 'left' },
+  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 120, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
 // Hàm tạo dữ liệu mẫu
-function createData(code: string, status: string, created_at: string, profit: number): Betsession {
-  return { code, status, created_at, profit };
+function createData(
+  username: string,
+  bank: string,
+  money: number,
+  note: string,
+  created_at: string,
+  status: string,
+  admin_accept: string
+): WithdrawHistoryFormData {
+  return { username, bank, money, note, created_at, status, admin_accept };
 }
 
-const initialData: Betsession[] = [
-  createData('BET001', 'Pending', '2025-04-23 10:00', 500),
-  createData('BET002', 'Won', '2025-04-23 11:00', 1000),
-  createData('BET003', 'Lost', '2025-04-23 12:00', -200),
-  createData('BET004', 'Pending', '2025-04-23 13:00', 0),
-  createData('BET005', 'Won', '2025-04-23 14:00', 750),
-  createData('BET006', 'Lost', '2025-04-23 15:00', -300),
+const initialData: WithdrawHistoryFormData[] = [
+  createData('user1', 'Vietcombank', 500, 'Rút tiền lần 1', '2025-04-23 10:00', 'Pending', 'Waiting'),
+  createData('user2', 'Techcombank', 1000, 'Rút thưởng', '2025-04-23 11:00', 'Won', 'Accepted'),
+  createData('user3', 'MB Bank', 200, 'Rút tiền', '2025-04-23 12:00', 'Lost', 'Rejected'),
+  createData('user4', 'VPBank', 0, 'Kiểm tra rút', '2025-04-23 13:00', 'Pending', 'Waiting'),
+  createData('user5', 'Sacombank', 750, 'Rút tiền lần 2', '2025-04-23 14:00', 'Won', 'Accepted'),
+  createData('user6', 'ACB', 300, 'Rút tiền', '2025-04-23 15:00', 'Lost', 'Rejected'),
 ];
 
-const BetSessionComponent: React.FC = () => {
+const WithdrawHistoryTable: React.FC = () => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof Betsession | ''>('');
+  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData | ''>('');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<Betsession[]>(initialData);
+  const [filteredData, setFilteredData] = React.useState<WithdrawHistoryFormData[]>(initialData);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,20 +90,24 @@ const BetSessionComponent: React.FC = () => {
     setSearchTerm(value);
     setPage(0); // Reset về trang 1 khi tìm kiếm
     const filtered = initialData.filter(
-      (row) => row.code.toLowerCase().includes(value) || row.status.toLowerCase().includes(value)
+      (row) =>
+        row.username.toLowerCase().includes(value) ||
+        row.bank.toLowerCase().includes(value) ||
+        row.note.toLowerCase().includes(value) ||
+        row.status.toLowerCase().includes(value)
     );
     setFilteredData(filtered);
   };
 
   // Hàm xử lý sắp xếp
-  const handleSort = (field: keyof Betsession) => {
+  const handleSort = (field: keyof WithdrawHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
     const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
     setSortField(field);
     setSortOrder(newOrder);
 
     const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'profit') {
+      if (field === 'money') {
         return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
       }
       return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
@@ -97,10 +115,10 @@ const BetSessionComponent: React.FC = () => {
     setFilteredData(sortedData);
   };
 
-  // Hàm xử lý khi nhấp nút "Xem chi tiết"
-  const handleViewDetail = (code: string) => {
-    // Thay bằng logic thực tế (ví dụ: mở modal, chuyển hướng)
-    alert(`Xem chi tiết cho mã: ${code}`);
+  // Hàm xử lý khi nhấp nút "Cập nhật trạng thái"
+  const handleUpdateStatus = (username: string, currentStatus: string) => {
+    // Thay bằng logic thực tế (ví dụ: gọi API để cập nhật trạng thái)
+    alert(`Cập nhật trạng thái cho người dùng: ${username} từ ${currentStatus}`);
   };
 
   // Hàm xử lý thay đổi trang
@@ -127,7 +145,7 @@ const BetSessionComponent: React.FC = () => {
     >
       <Paper sx={{ width: '100%' }}>
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Phiên cược hiện tại
+          Danh sách tất cả yêu cầu rút tiền
         </Typography>
         <TextField
           label="Tìm kiếm"
@@ -139,7 +157,7 @@ const BetSessionComponent: React.FC = () => {
           sx={{ mb: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-session-table">
+          <Table stickyHeader aria-label="withdraw-history-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
@@ -148,7 +166,7 @@ const BetSessionComponent: React.FC = () => {
                       <TableSortLabel
                         active={sortField === column.id}
                         direction={sortField === column.id ? sortOrder : 'asc'}
-                        onClick={() => handleSort(column.id as keyof Betsession)}
+                        onClick={() => handleSort(column.id as keyof WithdrawHistoryFormData)}
                       >
                         {column.label}
                       </TableSortLabel>
@@ -161,18 +179,22 @@ const BetSessionComponent: React.FC = () => {
             </TableHead>
             <TableBody>
               {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-                <TableRow hover tabIndex={-1} key={row.code}>
+                <TableRow hover tabIndex={-1} key={`${row.username}-${row.created_at}`}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleViewDetail(row.code)}>
-                            Xem chi tiết
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleUpdateStatus(row.username, row.status)}
+                          >
+                            Cập nhật trạng thái
                           </Button>
                         </TableCell>
                       );
                     }
-                    const value = row[column.id as keyof Betsession];
+                    const value = row[column.id as keyof WithdrawHistoryFormData];
                     return (
                       <TableCell key={column.id} align={column.align}>
                         {column.format && typeof value === 'number' ? column.format(value) : value}
@@ -198,4 +220,4 @@ const BetSessionComponent: React.FC = () => {
   );
 };
 
-export default BetSessionComponent;
+export default WithdrawHistoryTable;

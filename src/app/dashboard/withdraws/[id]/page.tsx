@@ -1,3 +1,5 @@
+import WithdrawHistoryPage from '@/pages/withdraws.page';
+
 export default function CustomerDetail() {
-  return <div>Detail Customer</div>;
+  return <WithdrawHistoryPage />;
 }
