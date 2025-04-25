@@ -3,6 +3,7 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signInApi } from '@/services/auth/auth.api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -19,77 +20,60 @@ import { Controller, useForm } from 'react-hook-form';
 import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
-import { authClient } from '@/lib/auth/client';
 import { useUser } from '@/hooks/use-user';
 
 const schema = zod.object({
-  email: zod.string().min(1, { message: 'Email is required' }).email(),
-  password: zod.string().min(1, { message: 'Password is required' }),
+  username: zod.string().min(1, { message: 'Tên đăng nhập không được bỏ trống' }),
+  password: zod.string().min(1, { message: 'Mật khẩu không được bỏ trống' }),
 });
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'sofia@devias.io', password: 'Secret1' } satisfies Values;
-
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
 
-  const { checkSession } = useUser();
-
-  const [showPassword, setShowPassword] = React.useState<boolean>();
-
-  const [isPending, setIsPending] = React.useState<boolean>(false);
+  const [showPassword, setShowPassword] = React.useState<boolean>(false);
+  const { user } = useUser(); // Kiểm tra trạng thái đăng nhập
 
   const {
     control,
     handleSubmit,
-    setError,
     formState: { errors },
-  } = useForm<Values>({ defaultValues, resolver: zodResolver(schema) });
-
-  const onSubmit = React.useCallback(
-    async (values: Values): Promise<void> => {
-      setIsPending(true);
-
-      const { error } = await authClient.signInWithPassword(values);
-
-      if (error) {
-        setError('root', { type: 'server', message: error });
-        setIsPending(false);
-        return;
-      }
-
-      // Refresh the auth state
-      await checkSession?.();
-
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
-      router.refresh();
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      username: '',
+      password: '',
     },
-    [checkSession, router, setError]
-  );
+  });
+
+  const onSubmit = async (data: Values) => {
+    try {
+      const res = await signInApi(data);
+      if (res.status === 200 || res.status === 201) {
+        router.push('/');
+      }
+      console.log(res);
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  };
 
   return (
     <Stack spacing={4}>
       <Stack spacing={1}>
-        <Typography variant="h4">Sign in</Typography>
-        <Typography color="text.secondary" variant="body2">
-          Don&apos;t have an account?{' '}
-          <Link component={RouterLink} href={paths.auth.signUp} underline="hover" variant="subtitle2">
-            Sign up
-          </Link>
-        </Typography>
+        <Typography variant="h4">Đăng nhập</Typography>
       </Stack>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
           <Controller
             control={control}
-            name="email"
+            name="username"
             render={({ field }) => (
-              <FormControl error={Boolean(errors.email)}>
-                <InputLabel>Email address</InputLabel>
-                <OutlinedInput {...field} label="Email address" type="email" />
-                {errors.email ? <FormHelperText>{errors.email.message}</FormHelperText> : null}
+              <FormControl error={!!errors.username}>
+                <InputLabel>Tên đăng nhập</InputLabel>
+                <OutlinedInput {...field} label="Tên đăng nhập" type="text" />
+                {errors.username && <FormHelperText>{errors.username.message}</FormHelperText>}
               </FormControl>
             )}
           />
@@ -97,8 +81,8 @@ export function SignInForm(): React.JSX.Element {
             control={control}
             name="password"
             render={({ field }) => (
-              <FormControl error={Boolean(errors.password)}>
-                <InputLabel>Password</InputLabel>
+              <FormControl error={!!errors.password}>
+                <InputLabel>Mật khẩu</InputLabel>
                 <OutlinedInput
                   {...field}
                   endAdornment={
@@ -106,48 +90,33 @@ export function SignInForm(): React.JSX.Element {
                       <EyeIcon
                         cursor="pointer"
                         fontSize="var(--icon-fontSize-md)"
-                        onClick={(): void => {
-                          setShowPassword(false);
-                        }}
+                        onClick={() => setShowPassword(false)}
                       />
                     ) : (
                       <EyeSlashIcon
                         cursor="pointer"
                         fontSize="var(--icon-fontSize-md)"
-                        onClick={(): void => {
-                          setShowPassword(true);
-                        }}
+                        onClick={() => setShowPassword(true)}
                       />
                     )
                   }
-                  label="Password"
+                  label="Mật khẩu"
                   type={showPassword ? 'text' : 'password'}
                 />
-                {errors.password ? <FormHelperText>{errors.password.message}</FormHelperText> : null}
+                {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
               </FormControl>
             )}
           />
           <div>
             <Link component={RouterLink} href={paths.auth.resetPassword} variant="subtitle2">
-              Forgot password?
+              Quên mật khẩu?
             </Link>
           </div>
-          {errors.root ? <Alert color="error">{errors.root.message}</Alert> : null}
-          <Button disabled={isPending} type="submit" variant="contained">
-            Sign in
+          <Button type="submit" variant="contained">
+            Đăng nhập
           </Button>
         </Stack>
       </form>
-      <Alert color="warning">
-        Use{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          sofia@devias.io
-        </Typography>{' '}
-        with password{' '}
-        <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          Secret1
-        </Typography>
-      </Alert>
     </Stack>
   );
 }

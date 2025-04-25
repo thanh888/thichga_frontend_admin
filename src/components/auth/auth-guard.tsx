@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { getAccoutUserApi } from '@/services/auth/auth.api';
 import Alert from '@mui/material/Alert';
 
 import { paths } from '@/paths';
@@ -26,6 +27,8 @@ export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | nul
       setIsChecking(false);
       return;
     }
+
+    console.log(user);
 
     if (!user) {
       logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
