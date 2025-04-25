@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { getAccoutUserApi } from '@/services/auth/auth.api';
 
 import type { User } from '@/types/user';
 import { authClient } from '@/lib/auth/client';
@@ -28,15 +29,19 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
 
   const checkSession = React.useCallback(async (): Promise<void> => {
     try {
-      const { data, error } = await authClient.getUser();
+      const reponse = await getAccoutUserApi();
 
-      if (error) {
-        logger.error(error);
+      console.log(1);
+
+      if (reponse.status === 200) {
+        setState((prev) => ({ ...prev, user: reponse.data ?? null, error: null, isLoading: false }));
+      } else {
+        console.log(2);
+
+        logger.error(reponse?.message);
         setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
         return;
       }
-
-      setState((prev) => ({ ...prev, user: data ?? null, error: null, isLoading: false }));
     } catch (err) {
       logger.error(err);
       setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
