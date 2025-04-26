@@ -30,7 +30,13 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
 
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     try {
-      await SignOutApi();
+      const response = await SignOutApi();
+      if (response) {
+        if (checkSession) {
+          await checkSession(); // Call checkSession to update user state
+          router.replace(paths.auth.signIn);
+        } // <-- Cập nhật lại user
+      }
       router.replace(paths.auth.signIn);
     } catch (err) {
       logger.error('Sign out error', err);

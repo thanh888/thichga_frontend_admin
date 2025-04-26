@@ -2,8 +2,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { getAccoutUserApi } from '@/services/auth/auth.api';
-import Alert from '@mui/material/Alert';
 
 import { paths } from '@/paths';
 import { logger } from '@/lib/default-logger';
@@ -28,8 +26,6 @@ export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | nul
       return;
     }
 
-    console.log(user);
-
     if (!user) {
       logger.debug('[AuthGuard]: User is not logged in, redirecting to sign in');
       router.replace(paths.auth.signIn);
@@ -49,9 +45,8 @@ export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | nul
   if (isChecking) {
     return null;
   }
-
   if (error) {
-    return <Alert color="error">{error}</Alert>;
+    router.replace(paths.auth.signIn);
   }
 
   return <React.Fragment>{children}</React.Fragment>;

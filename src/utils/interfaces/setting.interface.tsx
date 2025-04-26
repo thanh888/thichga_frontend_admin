@@ -4,7 +4,7 @@ import { PostInterface } from './post.interface';
 import { SupportContactInterface } from './support.interface';
 
 // Interface for the Setting document
-export interface Setting {
+export interface SettingInterface {
   // Brief introduction or description
   introduce?: string;
 

@@ -34,6 +34,7 @@ export function SignInForm(): React.JSX.Element {
 
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
   const { user } = useUser(); // Kiểm tra trạng thái đăng nhập
+  const { checkSession } = useUser(); // Access checkSession from UserContext
 
   const {
     control,
@@ -47,13 +48,21 @@ export function SignInForm(): React.JSX.Element {
     },
   });
 
+  React.useEffect(() => {
+    if (user) {
+      router.push(paths.dashboard.overview); // Redirect đến dashboard nếu đã đăng nhập
+    }
+  }, [user, router]);
+
   const onSubmit = async (data: Values) => {
     try {
       const res = await signInApi(data);
       if (res.status === 200 || res.status === 201) {
+        if (checkSession) {
+          await checkSession(); // Call checkSession to update user state
+        }
         router.push('/');
       }
-      console.log(res);
     } catch (error: any) {
       console.error('Login failed:', error);
     }

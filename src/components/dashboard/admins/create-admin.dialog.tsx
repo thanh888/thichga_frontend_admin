@@ -1,4 +1,8 @@
 import * as React from 'react';
+import { CreateAccount } from '@/services/dashboard/user.api';
+import { RoleUsers } from '@/utils/enum/role.enum';
+import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
@@ -17,6 +21,7 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { toast } from 'react-toastify';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -32,41 +37,68 @@ interface CreateAdminProps {
   setOpenCreate: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-// Interface cho dữ liệu form
-interface AdminFormData {
-  username: string;
-  password: string;
-  code: string;
-  role: string;
-}
+const defaultFormData: UserInterface = {
+  username: '',
+  password: '',
+  referral_code: '',
+  role: RoleUsers.ADMIN,
+};
 
 export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<CreateAdminProps>) {
-  const [formData, setFormData] = React.useState<AdminFormData>({
+  const [formData, setFormData] = React.useState<UserInterface>({
     username: '',
     password: '',
-    code: '',
-    role: '',
+    referral_code: '',
+    role: RoleUsers.ADMIN,
   });
+
+  const [formError, setFormError] = React.useState<any>();
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
     if (name) {
-      setFormData((prev) => ({
+      setFormData((prev: any) => ({
         ...prev,
         [name]: value,
       }));
+      if (!value) {
+        setFieldError(setFormError, name, true);
+        return;
+      }
+      setFieldError(setFormError, name, false);
     }
   };
 
   const handleClose = () => {
+    setFormData(defaultFormData);
     setOpenCreate(false);
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    handleClose();
+  const handleSubmit = async () => {
+    const { referral_code, ...newData } = formData;
+
+    const isNotNull = CheckFormDataNull(newData, setFormError);
+
+    if (!isNotNull) {
+      toast.error('Hãy điền đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      const repose = await CreateAccount(formData);
+      if (repose.status === 201 || repose.status === 200) {
+        toast.success('Tạo tài khoản admin thành công');
+        handleClose();
+      } else toast.error('Tạo tài khoản thất bại');
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        toast.error('Tên người dùng đã tồn tại'); // hiện message từ NestJS
+      } else {
+        toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+      }
+    }
   };
 
   return (
@@ -101,6 +133,7 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
                 <OutlinedInput
                   label="Tên đăng nhập"
                   name="username"
+                  error={formError?.username ?? false}
                   value={formData.username}
                   onChange={handleChange}
                 />
@@ -113,6 +146,7 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
                   label="Mật khẩu"
                   name="password"
                   type="password"
+                  error={formError?.password ?? false}
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -121,14 +155,19 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
             <Grid item md={6} xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Mã mời</InputLabel>
-                <OutlinedInput label="Mã mời" name="code" value={formData.code} onChange={handleChange} />
+                <OutlinedInput
+                  label="Mã mời"
+                  name="referral_code"
+                  value={formData.referral_code}
+                  onChange={handleChange}
+                />
               </FormControl>
             </Grid>
             <Grid item md={6} xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Chức vụ</InputLabel>
                 <Select label="Chức vụ" name="role" value={formData.role} onChange={handleChange}>
-                  {states.map((option) => (
+                  {roles.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -140,7 +179,7 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button onClick={handleSubmit} variant="contained" type="submit">
           Tạo tài khoản
         </Button>
       </DialogActions>
@@ -149,8 +188,8 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
 }
 
 // Dữ liệu chọn chức vụ
-const states = [
-  { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'PAYMENT_MANAGER', label: 'Nhân viên quản lý nạp rút' },
-  { value: 'ROOM_MANAGER', label: 'Nhân viên quản lý phòng' },
+const roles = [
+  { value: RoleUsers.ADMIN, label: 'ADMIN' },
+  { value: RoleUsers.MANA_DEPOSIT, label: 'Nhân viên quản lý nạp rút' },
+  { value: RoleUsers.MANA_WITHDRAW, label: 'Nhân viên quản lý phòng' },
 ] as const;
