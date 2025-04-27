@@ -1,0 +1,6 @@
+export enum RoleUsers {
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER',
+  MANA_DEPOSIT = 'MANA_DEPOSIT',
+  MANA_WITHDRAW = 'MANA_WITHDRAW',
+}

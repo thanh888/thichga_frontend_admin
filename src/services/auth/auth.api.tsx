@@ -13,7 +13,6 @@ export const signInApi = async (formData: any) => {
 export const getAccoutUserApi = async () => {
   try {
     const res: any = await axiosCustomize.get(`/auth/account`);
-    console.log(res);
 
     return res;
   } catch (error: any) {

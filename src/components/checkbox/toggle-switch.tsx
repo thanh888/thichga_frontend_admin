@@ -50,9 +50,15 @@ const CustomSwitch = styled(Switch)(({ theme }) => ({
   },
 }));
 
-export default function ToggleSwitch({ name }: { name: string }) {
-  const [checked, setChecked] = useState(false);
-
+export default function ToggleSwitch({
+  name,
+  checked,
+  setChecked,
+}: {
+  name: string;
+  checked: boolean;
+  setChecked: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
   };

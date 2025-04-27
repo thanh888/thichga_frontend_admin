@@ -4,6 +4,8 @@ import type { Viewport } from 'next';
 import '@/styles/global.css';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 
+import { ToastContainer } from 'react-toastify';
+
 import { UserProvider } from '@/contexts/user-context';
 import { LocalizationProvider } from '@/components/core/localization-provider';
 import { ThemeProvider } from '@/components/core/theme-provider/theme-provider';
@@ -20,7 +22,10 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
       <body>
         <LocalizationProvider>
           <UserProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <ThemeProvider>
+              {children}
+              <ToastContainer />
+            </ThemeProvider>
           </UserProvider>
         </LocalizationProvider>
       </body>

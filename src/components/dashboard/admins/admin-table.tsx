@@ -1,6 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { paginateAccountApi } from '@/services/dashboard/user.api';
+import { rolesAdmin } from '@/utils/functions/default-function';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
@@ -14,8 +17,6 @@ import {
   Select,
   SelectChangeEvent,
   Stack,
-  styled,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -29,40 +30,42 @@ import {
 
 import EditAdmin from './update-admin.dialog';
 
-// Styled Switch (like the "YES" toggle from your image)
-
 export interface AdminFormData {
-  id: string;
+  _id: string;
   username: string;
-  code: string;
   role: string;
-  isActive?: boolean; // Added isActive field for toggle
 }
 
-interface AdminsTableProps {
-  count?: number;
-  page?: number;
-  rows?: AdminFormData[];
-  rowsPerPage?: number;
-  onPageChange?: (event: unknown, newPage: number) => void;
-  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onToggleActive?: (id: string) => void; // Callback for toggling active status
-}
+export function AdminsTable(): React.JSX.Element {
+  const [accounts, setAccounts] = React.useState<any>(null);
 
-export function AdminsTable({
-  count = 0,
-  rows = [],
-  page = 0,
-  rowsPerPage = 0,
-  onPageChange = () => {},
-  onRowsPerPageChange = () => {},
-  onToggleActive = () => {},
-}: Readonly<AdminsTableProps>): React.JSX.Element {
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof AdminFormData>('username');
+  const [page, setPage] = React.useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
+
   const [filter, setFilter] = React.useState({ username: '', role: '' });
 
-  const [openEdit, setOpenEdit] = React.useState<any>(null);
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [orderBy, setOrderBy] = React.useState<keyof AdminFormData>('username');
+
+  const [openEdit, setOpenEdit] = React.useState<AdminFormData | null>(null);
+
+  const fetchAccounts = async () => {
+    try {
+      const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.username}&role=${filter.role}&sort=${sortQuery}`;
+      const response = await paginateAccountApi(query);
+
+      if (response.status === 200 || response.status === 201) {
+        setAccounts(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch accounts:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAccounts();
+  }, [page, rowsPerPage, filter, order, orderBy]);
 
   const handleRequestSort = (property: keyof AdminFormData) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -71,39 +74,25 @@ export function AdminsTable({
   };
 
   const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
-    if (name) {
-      setFilter((prev) => ({ ...prev, [name]: value }));
-    }
+    setFilter((prev) => ({ ...prev, [name]: value }));
+    setPage(0); // Reset về trang đầu tiên khi lọc
   };
 
-  const sortedRows = React.useMemo(() => {
-    const comparator = (a: AdminFormData, b: AdminFormData) => {
-      if (orderBy === 'username' || orderBy === 'role') {
-        const aValue = a[orderBy].toLowerCase();
-        const bValue = b[orderBy].toLowerCase();
-        return order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-      return 0;
-    };
-    return [...rows].sort(comparator);
-  }, [rows, order, orderBy]);
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-  const filteredRows = React.useMemo(() => {
-    return sortedRows.filter((row) => {
-      const matchesUsername = row.username.toLowerCase().includes(filter.username.toLowerCase());
-      const matchesRole = filter.role ? row.role === filter.role : true;
-      return matchesUsername && matchesRole;
-    });
-  }, [sortedRows, filter]);
-
-  // Paginate the filtered rows
-  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset về trang đầu tiên
+  };
 
   return (
     <Card>
+      {/* Bộ lọc */}
       <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <TextField
           label="Tìm theo tên đăng nhập"
@@ -116,7 +105,7 @@ export function AdminsTable({
           <InputLabel>Chức vụ</InputLabel>
           <Select label="Chức vụ" name="role" value={filter.role} onChange={handleFilterChange}>
             <MenuItem value="">Tất cả</MenuItem>
-            {states.map((option) => (
+            {rolesAdmin.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
@@ -124,8 +113,10 @@ export function AdminsTable({
           </Select>
         </FormControl>
       </Box>
+
+      {/* Bảng */}
       <Box sx={{ overflowX: 'auto' }}>
-        <Table sx={{ minWidth: '800px' }}>
+        <Table sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               <TableCell>
@@ -146,52 +137,46 @@ export function AdminsTable({
                   Chức vụ
                 </TableSortLabel>
               </TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Hành động</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedRows.map((row) => {
-              return (
-                <TableRow hover key={row.id}>
-                  <TableCell>
-                    <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                      <Typography variant="subtitle2">{row.username}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{row.role}</TableCell>
-
-                  <TableCell>
-                    <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
-                      <DriveFileRenameOutlineIcon />
-                    </Button>
-                    <Button variant="contained" color="error">
-                      <DeleteOutlineOutlinedIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {accounts?.docs.map((row: AdminFormData) => (
+              <TableRow key={row._id} hover>
+                <TableCell>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography variant="subtitle2">{row.username}</Typography>
+                  </Stack>
+                </TableCell>
+                <TableCell>{row.role}</TableCell>
+                <TableCell>
+                  <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
+                    <DriveFileRenameOutlineIcon />
+                  </Button>
+                  <Button variant="contained" color="error">
+                    <DeleteOutlineOutlinedIcon />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Box>
+
+      {/* Phân trang */}
       <Divider />
       <TablePagination
         component="div"
-        count={filteredRows.length} // Update count to reflect filtered rows
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
+        count={accounts?.totalDocs || 0}
         page={page}
+        onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[5, 10, 25]}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10, 25, 50, 100]}
       />
+
+      {/* Dialog chỉnh sửa */}
       <EditAdmin openEdit={openEdit} setOpenEdit={setOpenEdit} />
     </Card>
   );
 }
-
-// Role options for filtering
-const states = [
-  { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'PAYMENT_MANAGER', label: 'Nhân viên quản lý nạp rút' },
-  { value: 'ROOM_MANAGER', label: 'Nhân viên quản lý phòng' },
-] as const;
