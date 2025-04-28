@@ -15,50 +15,9 @@ import { UserFormData, UsersTable } from '@/components/dashboard/users/user-tabl
 
 export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
 
-const users: UserFormData[] = [
-  {
-    id: '1',
-    username: 'john_doe',
-    status: 'active',
-    referrer: 'admin_01',
-    created_at: '2025-04-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    username: 'jane_smith',
-    status: 'inactive',
-    referrer: 'john_doe',
-    created_at: '2025-04-02T12:45:00Z',
-  },
-  {
-    id: '3',
-    username: 'alex_nguyen',
-    status: 'active',
-    referrer: 'admin_02',
-    created_at: '2025-04-03T09:15:00Z',
-  },
-  {
-    id: '4',
-    username: 'maria_garcia',
-    status: 'active',
-    referrer: 'alex_nguyen',
-    created_at: '2025-04-05T14:10:00Z',
-  },
-  {
-    id: '5',
-    username: 'tom_hardy',
-    status: 'pending',
-    referrer: 'jane_smith',
-    created_at: '2025-04-06T16:20:00Z',
-  },
-];
-
 export default function UsersPage(): React.JSX.Element {
-  const page = 0;
-  const rowsPerPage = 5;
-  const [openCreate, setOpenCreate] = React.useState(false);
-
-  const paginatedCustomers = applyPagination(users, page, rowsPerPage);
+  const [openCreate, setOpenCreate] = React.useState<boolean>(false);
+  const [isReload, setIsReload] = React.useState<boolean>(true);
 
   return (
     <Stack spacing={3}>
@@ -84,8 +43,8 @@ export default function UsersPage(): React.JSX.Element {
           </Button>
         </div>
       </Stack>
-      <UsersTable count={paginatedCustomers.length} page={page} rows={paginatedCustomers} rowsPerPage={rowsPerPage} />
-      <CreateUser openCreate={openCreate} setOpenCreate={setOpenCreate} />
+      <UsersTable isReload={isReload} setIsReload={setIsReload} />
+      <CreateUser openCreate={openCreate} setOpenCreate={setOpenCreate} isReload={isReload} setIsReload={setIsReload} />
     </Stack>
   );
 }

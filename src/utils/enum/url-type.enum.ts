@@ -1,5 +1,4 @@
 export enum UrlTypeEnum {
-  EMBED = 'EMBED',
-  JFRAME = 'JFRAME',
-  EXTERNAL = 'EXTERNAL',
+  M3U8 = 'M3U8',
+  IFRAME = 'IFRAME',
 }

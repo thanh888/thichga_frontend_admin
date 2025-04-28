@@ -91,7 +91,7 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
       fullWidth
     >
       <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-        Sửa tài khoản
+        Sửa phòng cược
       </DialogTitle>
       <IconButton
         aria-label="close"

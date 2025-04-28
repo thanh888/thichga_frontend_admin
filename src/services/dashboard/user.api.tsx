@@ -5,7 +5,22 @@ export const CreateAccount = async (body: any) => {
   return res;
 };
 
-export const paginateAccountApi = async (query: string) => {
+export const UpdateUserById = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/user/${id}`, body);
+  return res;
+};
+
+export const paginateAdminApi = async (query: string) => {
   const res = await axiosCustomize.get(`/user/admins?${query}`);
+  return res;
+};
+
+export const paginateUserApi = async (query: string) => {
+  const res = await axiosCustomize.get(`/user/paginate?${query}`);
+  return res;
+};
+
+export const getListReferralBy = async () => {
+  const res = await axiosCustomize.get(`/user/referrals`);
   return res;
 };

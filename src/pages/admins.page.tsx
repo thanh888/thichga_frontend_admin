@@ -19,6 +19,8 @@ export const metadata = { title: `Customers | Dashboard | ${config.site.name}` }
 export default function AdminsPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState(false);
 
+  const [isReload, setIsReload] = React.useState<boolean>(true);
+
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={3}>
@@ -45,8 +47,13 @@ export default function AdminsPage(): React.JSX.Element {
       </Stack>
       <AdminsStatusCode />
       {/* <AdminsFilters /> */}
-      <AdminsTable />
-      <CreateAdmin openCreate={openCreate} setOpenCreate={setOpenCreate} />
+      <AdminsTable isReload={isReload} setIsReload={setIsReload} />
+      <CreateAdmin
+        openCreate={openCreate}
+        setOpenCreate={setOpenCreate}
+        isReload={isReload}
+        setIsReload={setIsReload}
+      />
     </Stack>
   );
 }

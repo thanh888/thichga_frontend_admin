@@ -13,7 +13,7 @@ export interface BettingRoomInterface {
   urlLive?: string;
 
   // Type of URL (e.g., JFRAME, OTHER)
-  urlType?: UrlTypeEnum;
+  urlType?: UrlTypeEnum | string;
 
   // Fee percentage (0-100%)
   fee?: number;
@@ -55,7 +55,7 @@ export interface BettingRoomInterface {
   isAcceptBetting?: boolean;
 
   // Timestamp when the betting room was created
-  createdAt?: Date;
+  createdAt?: Date | string;
 
   // Timestamp when the betting room was last updated
   updatedAt?: Date;

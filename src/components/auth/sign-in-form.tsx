@@ -58,6 +58,7 @@ export function SignInForm(): React.JSX.Element {
     try {
       const res = await signInApi(data);
       if (res.status === 200 || res.status === 201) {
+        localStorage.setItem('account', res.data.accessToken);
         if (checkSession) {
           await checkSession(); // Call checkSession to update user state
         }

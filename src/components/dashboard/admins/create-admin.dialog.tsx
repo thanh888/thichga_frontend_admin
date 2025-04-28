@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { CreateAccount } from '@/services/dashboard/user.api';
 import { RoleUsers } from '@/utils/enum/role.enum';
-import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
+import { CheckFormDataNull, rolesAdmin, setFieldError } from '@/utils/functions/default-function';
 import { UserInterface } from '@/utils/interfaces/user.interface';
 import CloseIcon from '@mui/icons-material/Close';
 import {
@@ -35,20 +35,20 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 interface CreateAdminProps {
   openCreate: boolean;
   setOpenCreate: React.Dispatch<React.SetStateAction<boolean>>;
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const defaultFormData: UserInterface = {
   username: '',
   password: '',
-  referral_code: '',
   role: RoleUsers.ADMIN,
 };
 
-export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<CreateAdminProps>) {
+export default function CreateAdmin({ openCreate, setOpenCreate, setIsReload }: Readonly<CreateAdminProps>) {
   const [formData, setFormData] = React.useState<UserInterface>({
     username: '',
     password: '',
-    referral_code: '',
     role: RoleUsers.ADMIN,
   });
 
@@ -77,9 +77,7 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
   };
 
   const handleSubmit = async () => {
-    const { referral_code, ...newData } = formData;
-
-    const isNotNull = CheckFormDataNull(newData, setFormError);
+    const isNotNull = CheckFormDataNull(formData, setFormError);
 
     if (!isNotNull) {
       toast.error('Hãy điền đầy đủ thông tin');
@@ -89,11 +87,15 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
     try {
       const repose = await CreateAccount(formData);
       if (repose.status === 201 || repose.status === 200) {
+        setIsReload(true);
         toast.success('Tạo tài khoản admin thành công');
         handleClose();
       } else toast.error('Tạo tài khoản thất bại');
     } catch (error: any) {
-      if (error.response?.data?.message) {
+      console.log(error.response?.data?.message);
+      if (error.response?.data?.message === 'Referral code is not exist') {
+        toast.error('Mã giới thiệu không tồn tại'); // hiện message từ NestJS
+      } else if (error.response?.data?.message) {
         toast.error('Tên người dùng đã tồn tại'); // hiện message từ NestJS
       } else {
         toast.error('Đã xảy ra lỗi, vui lòng thử lại');
@@ -154,20 +156,9 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
             </Grid>
             <Grid item md={6} xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Mã mời</InputLabel>
-                <OutlinedInput
-                  label="Mã mời"
-                  name="referral_code"
-                  value={formData.referral_code}
-                  onChange={handleChange}
-                />
-              </FormControl>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <FormControl fullWidth>
                 <InputLabel>Chức vụ</InputLabel>
                 <Select label="Chức vụ" name="role" value={formData.role} onChange={handleChange}>
-                  {roles.map((option) => (
+                  {rolesAdmin.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -186,10 +177,3 @@ export default function CreateAdmin({ openCreate, setOpenCreate }: Readonly<Crea
     </BootstrapDialog>
   );
 }
-
-// Dữ liệu chọn chức vụ
-const roles = [
-  { value: RoleUsers.ADMIN, label: 'ADMIN' },
-  { value: RoleUsers.MANA_DEPOSIT, label: 'Nhân viên quản lý nạp rút' },
-  { value: RoleUsers.MANA_WITHDRAW, label: 'Nhân viên quản lý phòng' },
-] as const;

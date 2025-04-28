@@ -1,6 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { UpdateUserById } from '@/services/dashboard/user.api';
+import { RoleUsers } from '@/utils/enum/role.enum';
+import { CheckFormDataNull, rolesAdmin, setFieldError } from '@/utils/functions/default-function';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
@@ -19,6 +23,7 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { toast } from 'react-toastify';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -32,30 +37,21 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 interface EditAdminProps {
   openEdit: any;
   setOpenEdit: React.Dispatch<React.SetStateAction<any>>;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
-// Interface cho dữ liệu form
-interface AdminFormData {
-  username: string;
-  password: string;
-  code: string;
-  role: string;
-}
-
-export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminProps>) {
-  const [formData, setFormData] = React.useState<AdminFormData>({
+export default function EditAdmin({ openEdit, setOpenEdit, setIsReload }: Readonly<EditAdminProps>) {
+  const [formData, setFormData] = React.useState<UserInterface>({
     username: '',
     password: '',
-    code: '',
     role: '',
   });
+
+  const [formError, setFormError] = React.useState<any>();
 
   React.useEffect(() => {
     if (openEdit !== null) {
       setFormData({
         username: openEdit?.username,
-        password: openEdit?.password,
-        code: openEdit?.code,
         role: openEdit?.role,
       });
     }
@@ -66,10 +62,15 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
   ) => {
     const { name, value } = event.target;
     if (name) {
-      setFormData((prev) => ({
+      setFormData((prev: any) => ({
         ...prev,
         [name]: value,
       }));
+      if (!value) {
+        setFieldError(setFormError, name, true);
+        return;
+      }
+      setFieldError(setFormError, name, false);
     }
   };
 
@@ -77,9 +78,27 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
     setOpenEdit(null);
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    handleClose();
+  const handleSubmit = async () => {
+    const isNotNull = CheckFormDataNull(formData, setFormError);
+    if (!isNotNull) {
+      toast.error('Hãy điền đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      const reponse = await UpdateUserById(openEdit._id, formData);
+      if (reponse.status === 200 || reponse.status === 201) {
+        setIsReload(true);
+        toast.success('Cập nhật thành công');
+      }
+      handleClose();
+    } catch (error: any) {
+      if (error.response?.data?.message === 'Username is existed') {
+        toast.error('Tên người dùng đã tồn tại'); // hiện message từ NestJS
+      } else {
+        toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+      }
+    }
   };
 
   return (
@@ -113,6 +132,7 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
                 <InputLabel>Tên đăng nhập</InputLabel>
                 <OutlinedInput
                   label="Tên đăng nhập"
+                  error={formError?.username ?? false}
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
@@ -131,17 +151,22 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
                 />
               </FormControl>
             </Grid>
-            <Grid item md={6} xs={12}>
+            {/* <Grid item md={6} xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Mã mời</InputLabel>
-                <OutlinedInput label="Mã mời" name="code" value={formData.code} onChange={handleChange} />
+                <OutlinedInput
+                  label="Mã mời"
+                  name="code"
+                  value={formData.referral_receiver_id}
+                  onChange={handleChange}
+                />
               </FormControl>
-            </Grid>
+            </Grid> */}
             <Grid item md={6} xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Chức vụ</InputLabel>
                 <Select label="Chức vụ" name="role" value={formData.role} onChange={handleChange}>
-                  {states.map((option) => (
+                  {rolesAdmin.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -160,10 +185,3 @@ export default function EditAdmin({ openEdit, setOpenEdit }: Readonly<EditAdminP
     </BootstrapDialog>
   );
 }
-
-// Dữ liệu chọn chức vụ
-const states = [
-  { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'PAYMENT_MANAGER', label: 'Nhân viên quản lý nạp rút' },
-  { value: 'ROOM_MANAGER', label: 'Nhân viên quản lý phòng' },
-] as const;

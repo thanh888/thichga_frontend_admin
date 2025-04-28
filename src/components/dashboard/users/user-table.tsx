@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { getListReferralBy, paginateUserApi } from '@/services/dashboard/user.api';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
@@ -8,10 +9,6 @@ import {
   Button,
   Card,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   SelectChangeEvent,
   Stack,
   Table,
@@ -27,39 +24,69 @@ import {
 
 import EditUser from './update-user.dialog';
 
-// Styled Switch (like the "YES" toggle from your image)
-
 export interface UserFormData {
-  id: string;
+  _id: string;
   username: string;
   status: string;
   referrer: string;
-  created_at: string;
+  createdAt: string;
 }
 
-interface UsersTableProps {
-  count?: number;
-  page?: number;
-  rows?: UserFormData[];
-  rowsPerPage?: number;
-  onPageChange?: (event: unknown, newPage: number) => void;
-  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onToggleActive?: (id: string) => void; // Callback for toggling active status
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function UsersTable({
-  count = 0,
-  rows = [],
-  page = 0,
-  rowsPerPage = 0,
-  onPageChange = () => {},
-  onRowsPerPageChange = () => {},
-}: Readonly<UsersTableProps>): React.JSX.Element {
+export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
+  const [accounts, setAccounts] = React.useState<any>(null);
+  const [page, setPage] = React.useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [filter, setFilter] = React.useState({ username: '' });
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('username');
-  const [filter, setFilter] = React.useState({ username: '', status: '' });
+  const [openEdit, setOpenEdit] = React.useState<UserFormData | null>(null);
 
-  const [openEdit, setOpenEdit] = React.useState<any>(null);
+  const [listReferralBys, setListReferralBys] = React.useState<any[]>([]);
+
+  const fetchAccounts = async () => {
+    try {
+      const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.username}&sort=${sortQuery}`;
+      const response = await paginateUserApi(query);
+
+      if (response.status === 200 || response.status === 201) {
+        setAccounts(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch accounts:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isReload) {
+      fetchAccounts();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getListReferralBy();
+        if (response.status === 200 || response.status === 201) {
+          setListReferralBys(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching referral list:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  React.useEffect(() => {
+    fetchAccounts();
+  }, [page, rowsPerPage, filter.username, order, orderBy]);
 
   const handleRequestSort = (property: keyof UserFormData) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -68,36 +95,21 @@ export function UsersTable({
   };
 
   const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
-    if (name) {
-      setFilter((prev) => ({ ...prev, [name]: value }));
-    }
+    setFilter((prev) => ({ ...prev, [name]: value }));
+    setPage(0); // Reset to first page when filtering
   };
 
-  const sortedRows = React.useMemo(() => {
-    const comparator = (a: UserFormData, b: UserFormData) => {
-      if (orderBy === 'username' || orderBy === 'status') {
-        const aValue = a[orderBy].toLowerCase();
-        const bValue = b[orderBy].toLowerCase();
-        return order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-      return 0;
-    };
-    return [...rows].sort(comparator);
-  }, [rows, order, orderBy]);
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-  const filteredRows = React.useMemo(() => {
-    return sortedRows.filter((row) => {
-      const matchesUsername = row.username.toLowerCase().includes(filter.username.toLowerCase());
-      const matchesRole = filter.status ? row.status === filter.status : true;
-      return matchesUsername && matchesRole;
-    });
-  }, [sortedRows, filter]);
-
-  // Paginate the filtered rows
-  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to first page
+  };
 
   return (
     <Card>
@@ -109,17 +121,6 @@ export function UsersTable({
           onChange={handleFilterChange}
           size="small"
         />
-        <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>Tất cả</InputLabel>
-          <Select label="Trạng thái" name="status" value={filter.status} onChange={handleFilterChange}>
-            <MenuItem value="">Tất cả</MenuItem>
-            {states.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Box>
       <Box sx={{ overflowX: 'auto' }}>
         <Table sx={{ minWidth: '800px' }}>
@@ -154,68 +155,62 @@ export function UsersTable({
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'created_at'}
-                  direction={orderBy === 'created_at' ? order : 'asc'}
-                  onClick={() => handleRequestSort('created_at')}
+                  active={orderBy === 'createdAt'}
+                  direction={orderBy === 'createdAt' ? order : 'asc'}
+                  onClick={() => handleRequestSort('createdAt')}
                 >
                   Ngày tạo
                 </TableSortLabel>
               </TableCell>
-
-              <TableCell>Actions</TableCell>
+              <TableCell>Hành động</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedRows.map((row) => {
-              return (
-                <TableRow hover key={row.id}>
-                  <TableCell>
-                    <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                      <Typography variant="subtitle2">{row.username}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{row.status}</TableCell>
-                  <TableCell>{row.referrer}</TableCell>
-                  <TableCell>{row.created_at}</TableCell>
-
-                  <TableCell>
-                    <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
-                      Chi tiết
-                    </Button>
-                    <Button variant="contained" color="success" sx={{ mr: 1 }}>
-                      LS Cược
-                    </Button>
-                    <Button variant="contained" color="success" sx={{ mr: 1 }}>
-                      Chuyển & Rút tiền
-                    </Button>
-                    <Button variant="contained" color="error">
-                      <DeleteOutlineOutlinedIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {accounts?.docs.map((row: UserFormData) => (
+              <TableRow hover key={row._id}>
+                <TableCell>
+                  <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
+                    <Typography variant="subtitle2">{row.username}</Typography>
+                  </Stack>
+                </TableCell>
+                <TableCell>{row.status}</TableCell>
+                <TableCell>{row.referrer}</TableCell>
+                <TableCell>{row.createdAt}</TableCell>
+                <TableCell>
+                  <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
+                    <DriveFileRenameOutlineIcon />
+                  </Button>
+                  <Button variant="contained" color="success" sx={{ mr: 1 }}>
+                    LS Cược
+                  </Button>
+                  <Button variant="contained" color="success" sx={{ mr: 1 }}>
+                    Chuyển & Rút tiền
+                  </Button>
+                  <Button variant="contained" color="error">
+                    <DeleteOutlineOutlinedIcon />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Box>
       <Divider />
       <TablePagination
         component="div"
-        count={filteredRows.length} // Update count to reflect filtered rows
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
+        count={accounts?.totalDocs || 0}
         page={page}
+        onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
       />
-      <EditUser openEdit={openEdit} setOpenEdit={setOpenEdit} />
+      <EditUser
+        openEdit={openEdit}
+        setOpenEdit={setOpenEdit}
+        setIsReload={setIsReload}
+        listReferralBys={listReferralBys}
+      />
     </Card>
   );
 }
-
-// Role options for filtering
-const states = [
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'BLOCKED', label: 'BLOCKED' },
-  { value: 'PENDDING', label: 'PENDDING' },
-] as const;
