@@ -3,6 +3,15 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
+  EnableBetting,
+  getOneBetroomId,
+  OpenSession,
+  UpdateBetRoomById,
+  uploadImageApi,
+} from '@/services/dashboard/bet-room.api';
+import { UrlTypeEnum } from '@/utils/enum/url-type.enum';
+import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
+import {
   Box,
   Button,
   FormControl,
@@ -13,18 +22,17 @@ import {
   OutlinedInput,
   Select,
   SelectChangeEvent,
-  Stack,
   styled,
   TextareaAutosize,
   Typography,
 } from '@mui/material';
-import { boolean } from 'zod';
+import { toast } from 'react-toastify';
 
 interface RoomeFormData {
   roomName: string;
-  thumbnail: File | null;
+  thumbnail: string;
   urlLive: string;
-  urlType: string;
+  urlType: UrlTypeEnum.IFRAME | string;
   secondsEnding: string;
   fee: string;
   marquee: string;
@@ -34,8 +42,8 @@ interface RoomeFormData {
   leftText: string;
   centerText: string;
   rightText: string;
-  isOpened?: boolean;
-  isAcceptBetting: boolean;
+  isOpened?: boolean | true;
+  isAcceptBetting?: boolean;
 }
 
 // Styled TextareaAutosize to match OutlinedInput
@@ -62,59 +70,51 @@ const HiddenInput = styled('input')({
   display: 'none',
 });
 
-export default function EditRoom() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
+interface Props {
+  data: RoomeFormData | null;
+}
 
-  const navigate = useRouter();
+export default function EditRoom({ data }: Readonly<Props>) {
+  const params = useParams<{ id: string }>();
+  const id = params?.id || '';
+  const router = useRouter();
 
   const [formData, setFormData] = React.useState<RoomeFormData | null>(null);
+
+  const [formError, setFormError] = React.useState<any>({});
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
 
-  // Giả lập API lấy dữ liệu phòng
-  const fetchRoomData = async (roomId: string): Promise<RoomeFormData> => {
-    // Thay bằng API thực tế của bạn
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          name: `Phòng ${roomId}`,
-          file: null,
-          vidUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          vidCategory: 'IFRAME',
-          countdown: '300',
-          feePercentage: '5',
-          marquee: 'Chào mừng đến với phòng cược!',
-          role: 'P2PBETTING',
-          chatBox: '<iframe src="chat-url"></iframe>',
-          sessionStatus: 'OPEN',
-          betStatus: 'OPEN',
-          nameOfA: 'Đội Đỏ',
-          nameOfB: 'Đội Xanh',
-          leftText: 'Trái',
-          centerText: 'Giữa',
-          rightText: 'Phải',
-          created_at: new Date().toISOString(),
-        });
-      }, 500);
-    });
-  };
-
-  // Lấy dữ liệu phòng khi component mount
   React.useEffect(() => {
-    if (id) {
-      fetchRoomData(id).then((data) => {
-        setFormData(data);
-        if (data.file) {
-          const previewUrl = URL.createObjectURL(data.file);
-          setImagePreview(previewUrl);
-          setFileName(data.file.name);
-        }
-      });
+    setFormData({
+      roomName: data?.roomName || '',
+      thumbnail: data?.thumbnail ?? '',
+      urlLive: data?.urlLive ?? '',
+      urlType: data?.urlType ?? UrlTypeEnum.IFRAME,
+      secondsEnding: data?.secondsEnding ?? '',
+      fee: data?.fee ?? '',
+      marquee: data?.marquee ?? '',
+      chattingJframe: data?.chattingJframe ?? '',
+      redName: data?.redName ?? '',
+      blueName: data?.blueName ?? '',
+      leftText: data?.leftText ?? '',
+      centerText: data?.centerText ?? '',
+      rightText: data?.rightText ?? '',
+      isOpened: data?.isOpened ?? false,
+      isAcceptBetting: data?.isAcceptBetting ?? false,
+    });
+    if (data?.thumbnail) {
+      setImagePreview('http://localhost:5000/' + data?.thumbnail);
+      setFileName(data?.thumbnail.split('/').pop() ?? '');
     }
-  }, [id]);
+  }, [data]);
 
-  // Handle text, number, and select inputs
+  React.useEffect(() => {
+    if (data?.isOpened) {
+      //gets session isopened ==== true
+    }
+  }, [data?.isOpened]);
+
   const handleChange = (
     event:
       | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>
@@ -126,29 +126,39 @@ export default function EditRoom() {
         ...prev!,
         [name]: value,
       }));
-    }
-  };
-
-  // Handle file input and generate image preview
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    if (formData) {
-      setFormData((prev) => ({
-        ...prev!,
-        file,
-      }));
-      if (file) {
-        const previewUrl = URL.createObjectURL(file);
-        setImagePreview(previewUrl);
-        setFileName(file.name);
+      if (!value && ['roomName', 'urlLive', 'urlType', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
+        setFieldError(setFormError, name, true);
       } else {
-        setImagePreview(null);
-        setFileName('');
+        setFieldError(setFormError, name, false);
       }
     }
   };
 
-  // Clean up image preview URL on component unmount or file change
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (file) {
+      try {
+        const uploadImage = await uploadImageApi(file);
+        if (uploadImage.status === 201) {
+          setFormData((prev: any) => ({
+            ...prev,
+            thumbnail: uploadImage.data.path,
+          }));
+          toast.success('Upload ảnh thành công');
+          const previewUrl = URL.createObjectURL(file);
+          setImagePreview(previewUrl);
+          setFileName(file.name);
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error('Upload ảnh thất bại. Vui lòng thử lại sau.');
+      }
+    } else {
+      setImagePreview(null);
+      setFileName('');
+    }
+  };
+
   React.useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -157,53 +167,112 @@ export default function EditRoom() {
     };
   }, [imagePreview]);
 
-  // Giả lập API cập nhật phòng
-  const updateRoom = async (updatedRoom: RoomeFormData) => {
-    // Thay bằng API thực tế của bạn
-    console.log('Room updated:', updatedRoom);
-    return true;
-  };
-
   const handleSubmit = async () => {
-    if (formData) {
-      const updatedRoom = {
-        ...formData,
-        created_at: formData.created_at, // Giữ nguyên created_at
-      };
-      const success = await updateRoom(updatedRoom);
-      if (success) {
-        navigate.push('/rooms'); // Chuyển hướng về danh sách phòng
+    if (!formData) return;
+
+    const requiredFields = {
+      roomName: formData.roomName,
+      urlLive: formData.urlLive,
+      urlType: formData.urlType,
+      secondsEnding: formData.secondsEnding,
+      redName: formData.redName,
+      blueName: formData.blueName,
+    };
+    const isNotNull = CheckFormDataNull(requiredFields, setFormError);
+
+    if (!isNotNull) {
+      toast.error('Hãy điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('roomName', formData.roomName);
+      formDataToSend.append('urlLive', formData.urlLive);
+      formDataToSend.append('urlType', formData.urlType);
+      formDataToSend.append('secondsEnding', formData.secondsEnding);
+      formDataToSend.append('fee', formData.fee);
+      formDataToSend.append('marquee', formData.marquee);
+      formDataToSend.append('chattingJframe', formData.chattingJframe);
+      formDataToSend.append('redName', formData.redName);
+      formDataToSend.append('blueName', formData.blueName);
+      formDataToSend.append('leftText', formData.leftText);
+      formDataToSend.append('centerText', formData.centerText);
+      formDataToSend.append('rightText', formData.rightText);
+      if (formData.thumbnail) {
+        formDataToSend.append('thumbnail', formData.thumbnail);
+      }
+
+      const response = await UpdateBetRoomById(id, formDataToSend);
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Cập nhật phòng thành công');
+      } else {
+        toast.error('Cập nhật phòng thất bại');
+      }
+    } catch (error: any) {
+      console.log(error.response?.data?.message);
+      if (error.response?.data?.message === 'Room name is existed') {
+        toast.error('Tên phòng đã tồn tại');
+      } else {
+        toast.error('Đã xảy ra lỗi, vui lòng thử lại');
       }
     }
   };
 
   const handleCancel = () => {
-    navigate.push('/rooms'); // Chuyển hướng về danh sách phòng
+    router.push('/rooms');
   };
 
-  // Convert YouTube URL to embed URL
-  const getYouTubeEmbedUrl = (url: string): string => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    const videoId = match && match[2].length === 11 ? match[2] : null;
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  const handleToggleSession = async () => {
+    if (!formData) return;
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('isOpened', String(!formData.isOpened));
+      const response = await OpenSession(id, formDataToSend);
+      if (response.status === 200 || response.status === 201) {
+        setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
+        toast.success(`Đã ${formData.isOpened ? 'đóng' : 'mở'} phiên`);
+      } else {
+        toast.error('Cập nhật trạng thái phiên thất bại');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    }
   };
 
-  // Render video preview based on vidCategory
+  const handleToggleBetting = async () => {
+    if (!formData) return;
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('isAcceptBetting', String(!formData.isAcceptBetting));
+      const response = await EnableBetting(id, formDataToSend);
+      if (response.status === 200 || response.status === 201) {
+        setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
+        toast.success(`Đã ${formData.isAcceptBetting ? 'đóng' : 'mở'} cược`);
+      } else {
+        toast.error('Cập nhật trạng thái cược thất bại');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    }
+  };
+
   const renderVideoPreview = () => {
-    if (!formData?.vidUrl || !formData?.vidCategory) return null;
+    if (!formData?.urlLive || !formData?.urlType) return null;
 
-    if (formData.vidCategory === 'M3U8') {
+    if (formData.urlType === UrlTypeEnum.M3U8) {
       return (
-        <video controls src={formData.vidUrl} style={{ width: '100%', maxHeight: '200px', marginTop: '8px' }}>
+        <video controls src={formData.urlLive} style={{ width: '100%', maxHeight: '200px', marginTop: '8px' }}>
           Your browser does not support the video tag.
         </video>
       );
-    } else if (formData.vidCategory === 'IFRAME') {
+    } else if (formData.urlType === UrlTypeEnum.IFRAME) {
       const embedUrl =
-        formData.vidUrl.includes('youtube.com') || formData.vidUrl.includes('youtu.be')
-          ? getYouTubeEmbedUrl(formData.vidUrl)
-          : formData.vidUrl;
+        formData.urlLive.includes('youtube.com') || formData.urlLive.includes('youtu.be')
+          ? getYouTubeEmbedUrl(formData.urlLive)
+          : formData.urlLive;
       return (
         <Box sx={{ position: 'relative', paddingTop: '56.25%', marginBottom: '16px' }}>
           <iframe
@@ -226,10 +295,12 @@ export default function EditRoom() {
     return null;
   };
 
-  if (!formData) {
-    return <Typography>Đang tải...</Typography>;
-  }
-
+  const getYouTubeEmbedUrl = (url: string): string => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    const videoId = match && match[2].length === 11 ? match[2] : null;
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
   return (
     <Box sx={{ width: '100%', pt: 1, pb: 4, px: 4, borderRadius: 2, boxShadow: 3 }}>
       <Typography variant="h4" gutterBottom>
@@ -238,44 +309,59 @@ export default function EditRoom() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           {renderVideoPreview()}
-          <FormControl fullWidth>
+          <FormControl fullWidth required>
             <InputLabel shrink>Đường dẫn live</InputLabel>
-            <StyledTextarea name="vidUrl" value={formData.vidUrl} onChange={handleChange} aria-label="Đường dẫn live" />
-            <FormControl fullWidth required sx={{ mt: 2 }}>
-              <InputLabel>Loại đường dẫn</InputLabel>
-              <Select label="Loại đường dẫn" name="vidCategory" value={formData.vidCategory} onChange={handleChange}>
-                <MenuItem value="">Chọn loại</MenuItem>
-                <MenuItem value="M3U8">M3U8</MenuItem>
-                <MenuItem value="IFRAME">IFRAME</MenuItem>
-              </Select>
-            </FormControl>
+            <StyledTextarea
+              name="urlLive"
+              value={formData?.urlLive}
+              onChange={handleChange}
+              aria-label="Đường dẫn live"
+              onError={formError?.urlLive ?? false}
+            />
+          </FormControl>
+          <FormControl fullWidth required sx={{ mt: 2 }}>
+            <InputLabel shrink>Loại đường dẫn</InputLabel>
+            <Select
+              name="urlType"
+              value={formData?.urlType}
+              onChange={handleChange}
+              error={formError?.urlType ?? false}
+            >
+              <MenuItem value="">Chọn loại</MenuItem>
+              <MenuItem value={UrlTypeEnum.M3U8}>M3U8</MenuItem>
+              <MenuItem value={UrlTypeEnum.IFRAME}>IFRAME</MenuItem>
+            </Select>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={6}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={12}>
               <FormControl fullWidth required>
-                <InputLabel>Tên phòng</InputLabel>
-                <OutlinedInput label="Tên phòng" name="name" value={formData.name} onChange={handleChange} />
+                <InputLabel shrink>Tên phòng</InputLabel>
+                <OutlinedInput
+                  name="roomName"
+                  value={formData?.roomName}
+                  onChange={handleChange}
+                  error={formError?.roomName ?? false}
+                />
               </FormControl>
             </Grid>
-
             <Grid item xs={12}>
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel shrink>Iframe hộp chat</InputLabel>
                 <StyledTextarea
                   minRows={1}
-                  name="chatBox"
-                  value={formData.chatBox}
+                  name="chattingJframe"
+                  value={formData?.chattingJframe}
                   onChange={handleChange}
                   aria-label="Iframe hộp chat"
                 />
               </FormControl>
-              <FormControl fullWidth required>
+              <FormControl fullWidth>
                 <InputLabel shrink>Ảnh hiển thị</InputLabel>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <label htmlFor="file-upload">
-                    <HiddenInput id="file-upload" type="file" accept="image/*" onChange={handleFileChange} />
+                  <label htmlFor="thumbnail-upload">
+                    <HiddenInput id="thumbnail-upload" type="file" accept="image/*" onChange={handleFileChange} />
                     <Button variant="contained" component="span">
                       Chọn ảnh
                     </Button>
@@ -291,97 +377,81 @@ export default function EditRoom() {
                     <Typography variant="caption">Xem trước:</Typography>
                     <img
                       src={imagePreview}
-                      alt="Image Preview"
+                      alt="Thumbnail Preview"
                       style={{ maxWidth: '100%', maxHeight: '200px', marginTop: '8px' }}
                     />
                   </Box>
                 )}
               </FormControl>
             </Grid>
-
-            {/*============ Section: Session Settings */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>Số giây kết thúc phiên</InputLabel>
+                <InputLabel shrink>Số giây kết thúc phiên</InputLabel>
                 <OutlinedInput
-                  label="Số giây kết thúc phiên"
-                  name="countdown"
+                  name="secondsEnding"
                   type="number"
-                  value={formData.countdown}
+                  value={formData?.secondsEnding}
                   onChange={handleChange}
+                  error={formError?.secondsEnding ?? false}
                 />
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>% lãi</InputLabel>
+                <InputLabel shrink>% lãi</InputLabel>
                 <OutlinedInput
-                  label="% lãi"
-                  name="feePercentage"
-                  value={formData.feePercentage}
+                  name="fee"
+                  value={formData?.fee}
                   onChange={handleChange}
                   endAdornment={<InputAdornment position="end">%</InputAdornment>}
                 />
               </FormControl>
             </Grid>
 
-            {/* Section: Display Text */}
             <Grid item xs={12} md={12}>
               <FormControl fullWidth>
-                <InputLabel>Dòng chữ chạy (marquee)</InputLabel>
-                <OutlinedInput
-                  label="Dòng chữ chạy (marquee)"
-                  name="marquee"
-                  value={formData.marquee}
-                  onChange={handleChange}
-                />
+                <InputLabel shrink>Dòng chữ chạy (marquee)</InputLabel>
+                <OutlinedInput name="marquee" value={formData?.marquee} onChange={handleChange} />
               </FormControl>
             </Grid>
             <Grid item xs={12} md={12}>
               <FormControl fullWidth>
-                <InputLabel>Dòng text trái video</InputLabel>
-                <OutlinedInput
-                  label="Dòng text trái video"
-                  name="leftText"
-                  value={formData.leftText}
-                  onChange={handleChange}
-                />
+                <InputLabel shrink>Dòng text trái video</InputLabel>
+                <OutlinedInput name="leftText" value={formData?.leftText} onChange={handleChange} />
               </FormControl>
             </Grid>
             <Grid item xs={12} md={12}>
               <FormControl fullWidth>
-                <InputLabel>Dòng text giữa video</InputLabel>
-                <OutlinedInput
-                  label="Dòng text giữa video"
-                  name="centerText"
-                  value={formData.centerText}
-                  onChange={handleChange}
-                />
+                <InputLabel shrink>Dòng text giữa video</InputLabel>
+                <OutlinedInput name="centerText" value={formData?.centerText} onChange={handleChange} />
               </FormControl>
             </Grid>
             <Grid item xs={12} md={12}>
               <FormControl fullWidth>
-                <InputLabel>Dòng text cuối video</InputLabel>
-                <OutlinedInput
-                  label="Dòng text cuối video"
-                  name="rightText"
-                  value={formData.rightText}
-                  onChange={handleChange}
-                />
-              </FormControl>
-            </Grid>
-            {/* Section: Teams */}
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Tên đội đỏ</InputLabel>
-                <OutlinedInput label="Tên đội đỏ" name="nameOfA" value={formData.nameOfA} onChange={handleChange} />
+                <InputLabel shrink>Dòng text cuối video</InputLabel>
+                <OutlinedInput name="rightText" value={formData?.rightText} onChange={handleChange} />
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth required>
-                <InputLabel>Tên đội xanh</InputLabel>
-                <OutlinedInput label="Tên đội xanh" name="nameOfB" value={formData.nameOfB} onChange={handleChange} />
+                <InputLabel shrink>Tên đội đỏ</InputLabel>
+                <OutlinedInput
+                  name="redName"
+                  value={formData?.redName}
+                  onChange={handleChange}
+                  error={formError?.redName ?? false}
+                />
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel shrink>Tên đội xanh</InputLabel>
+                <OutlinedInput
+                  name="blueName"
+                  value={formData?.blueName}
+                  onChange={handleChange}
+                  error={formError?.blueName ?? false}
+                />
               </FormControl>
             </Grid>
           </Grid>
@@ -399,18 +469,32 @@ export default function EditRoom() {
               width: '100%',
               mt: 4,
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: 'row',
               gap: 2,
               textAlign: 'right',
               justifyContent: 'center',
             }}
           >
-            <Button onClick={handleSubmit} variant="contained">
-              Mở/Đóng phiên
-            </Button>
-            <Button onClick={handleCancel} variant="outlined">
-              Mở/Đóng cược
-            </Button>
+            {!formData?.isAcceptBetting && (
+              <Button
+                onClick={handleToggleSession}
+                variant="contained"
+                sx={{ width: '100%' }}
+                color={formData?.isOpened ? 'error' : 'success'}
+              >
+                {formData?.isOpened ? 'Đóng phiên' : 'Mở phiên'}
+              </Button>
+            )}
+            {formData?.isOpened && (
+              <Button
+                onClick={handleToggleBetting}
+                variant="outlined"
+                sx={{ width: '100%' }}
+                color={formData?.isAcceptBetting ? 'error' : 'success'}
+              >
+                {formData?.isAcceptBetting ? 'Đóng cược' : 'Mở cược'}
+              </Button>
+            )}
           </Box>
         </Grid>
       </Grid>

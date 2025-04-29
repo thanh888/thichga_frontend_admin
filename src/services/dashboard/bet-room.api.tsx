@@ -10,6 +10,21 @@ export const UpdateBetRoomById = async (id: string, body: any) => {
   return res;
 };
 
+export const OpenSession = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/bet-room/${id}/open-session`, body);
+  return res;
+};
+
+export const EnableBetting = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/bet-room/${id}/enable-betting`, body);
+  return res;
+};
+
+export const UpdateOdds = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/bet-room/${id}/odds`, body);
+  return res;
+};
+
 export const paginateBetRoomApi = async (query: string) => {
   const res = await axiosCustomize.get(`/bet-room/paginate?${query}`);
   return res;

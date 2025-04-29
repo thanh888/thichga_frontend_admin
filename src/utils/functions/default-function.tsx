@@ -1,3 +1,4 @@
+import { BetHistoryStatusEnum } from '../enum/bet-history-status.enum';
 import { RoleUsers } from '../enum/role.enum';
 import { UserStatus } from '../enum/user-status.enum';
 
@@ -28,3 +29,11 @@ export const listUserStatuss = [
   { value: UserStatus.ACTIVE, label: 'Hoạt động' },
   { value: UserStatus.BLOCK, label: 'Đã khóa' },
 ] as const;
+
+// status bet history
+export const listStatusHistory = [
+  { value: BetHistoryStatusEnum.MATCHED, label: 'Đã khớp' },
+  { value: BetHistoryStatusEnum.NOT_MATCHED, label: 'Chưa khớp' },
+] as const;
+
+export const odds = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];

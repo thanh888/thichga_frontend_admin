@@ -37,7 +37,7 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã (Code)', minWidth: 100, align: 'left' },
+  { id: 'code', label: 'Mã cược', minWidth: 100, align: 'left' },
   { id: 'username', label: 'Tên người dùng', minWidth: 120, align: 'left' },
   {
     id: 'money',
