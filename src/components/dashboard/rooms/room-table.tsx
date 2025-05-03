@@ -1,8 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import * as React from 'react'; // Assumed room-specific API
+
 import { useRouter } from 'next/navigation';
+import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
+import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
   Box,
   Button,
@@ -25,42 +29,54 @@ import {
   Typography,
 } from '@mui/material';
 
-import EditRoom from './update-room.dialog';
-
-// Updated RoomFormData interface
 export interface RoomFormData {
-  id: string;
-  name: string;
-  type_room: string;
-  status_session: string;
-  status_bet: string;
-  created_at: string;
+  _id: string;
+  roomName: string;
+  typeRoom: string;
+  isOpened: boolean;
+  isAcceptBetting?: boolean;
+  createdAt: string;
 }
 
-interface RoomsTableProps {
-  count?: number;
-  page?: number;
-  rows?: RoomFormData[];
-  rowsPerPage?: number;
-  onPageChange?: (event: unknown, newPage: number) => void;
-  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onToggleBetStatus?: (id: string) => void; // Updated callback for toggling status_bet
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function RoomsTable({
-  count = 0,
-  rows = [],
-  page = 0,
-  rowsPerPage = 0,
-  onPageChange = () => {},
-  onRowsPerPageChange = () => {},
-  onToggleBetStatus = () => {},
-}: Readonly<RoomsTableProps>): React.JSX.Element {
-  const router = useRouter();
+export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
+  const [rooms, setRooms] = React.useState<any>(null);
+  const [page, setPage] = React.useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
+  const [filter, setFilter] = React.useState({ roomName: '', typeRoom: '', isOpened: '' });
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof RoomFormData>('name');
-  const [filter, setFilter] = React.useState({ name: '', type_room: '', status_session: '' });
-  const [openEdit, setOpenEdit] = React.useState<RoomFormData | null>(null);
+  const [orderBy, setOrderBy] = React.useState<keyof RoomFormData>('roomName');
+
+  const router = useRouter();
+
+  const fetchRooms = async () => {
+    try {
+      const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.roomName}&typeRoom=${filter.typeRoom}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
+      const response = await paginateBetRoomApi(query); // Assumed room-specific API
+
+      if (response.status === 200 || response.status === 201) {
+        setRooms(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch rooms:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isReload) {
+      fetchRooms();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    fetchRooms();
+  }, [page, rowsPerPage, filter, order, orderBy]);
 
   const handleRequestSort = (property: keyof RoomFormData) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -69,63 +85,46 @@ export function RoomsTable({
   };
 
   const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
-    if (name) {
-      setFilter((prev) => ({ ...prev, [name]: value }));
-    }
+    setFilter((prev) => ({ ...prev, [name]: value }));
+    setPage(0); // Reset to first page when filtering
   };
 
-  const sortedRows = React.useMemo(() => {
-    const comparator = (a: RoomFormData, b: RoomFormData) => {
-      if (orderBy === 'name' || orderBy === 'type_room' || orderBy === 'status_session' || orderBy === 'created_at') {
-        const aValue = a[orderBy].toLowerCase();
-        const bValue = b[orderBy].toLowerCase();
-        return order === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      }
-      return 0;
-    };
-    return [...rows].sort(comparator);
-  }, [rows, order, orderBy]);
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-  const filteredRows = React.useMemo(() => {
-    return sortedRows.filter((row) => {
-      const matchesName = row.name.toLowerCase().includes(filter.name.toLowerCase());
-      const matchesTypeRoom = filter.type_room ? row.type_room === filter.type_room : true;
-      const matchesStatusSession = filter.status_session ? row.status_session === filter.status_session : true;
-      return matchesName && matchesTypeRoom && matchesStatusSession;
-    });
-  }, [sortedRows, filter]);
-
-  // Paginate the filtered rows
-  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to first page
+  };
 
   return (
     <Card>
       <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <TextField label="Tìm theo tên" name="name" value={filter.name} onChange={handleFilterChange} size="small" />
+        <TextField
+          label="Tìm theo tên phòng"
+          name="roomName"
+          value={filter.roomName}
+          onChange={handleFilterChange}
+          size="small"
+        />
         <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>Loại phòng</InputLabel>
-          <Select label="Loại phòng" name="type_room" value={filter.type_room} onChange={handleFilterChange}>
+          <Select label="Loại phòng" name="typeRoom" value={filter.typeRoom} onChange={handleFilterChange}>
             <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value="VIP">VIP</MenuItem>
-            <MenuItem value="Standard">Standard</MenuItem>
-            <MenuItem value="Premium">Premium</MenuItem>
+            <MenuItem value={TypeBetRoomEnum.NORMAL}>Truyền thống</MenuItem>
+            <MenuItem value={TypeBetRoomEnum.SOLO}>Đối kháng</MenuItem>
           </Select>
         </FormControl>
         <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>Trạng thái phiên</InputLabel>
-          <Select
-            label="Trạng thái phiên"
-            name="status_session"
-            value={filter.status_session}
-            onChange={handleFilterChange}
-          >
+          <InputLabel>Trạng thái phòng</InputLabel>
+          <Select label="Trạng thái phòng" name="isOpened" value={filter.isOpened} onChange={handleFilterChange}>
             <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value="active">Hoạt động</MenuItem>
-            <MenuItem value="inactive">Không hoạt động</MenuItem>
-            <MenuItem value="pending">Đang chờ</MenuItem>
+            <MenuItem value="true">Mở</MenuItem>
+            <MenuItem value="false">Đóng</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -135,37 +134,37 @@ export function RoomsTable({
             <TableRow>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'name'}
-                  direction={orderBy === 'name' ? order : 'asc'}
-                  onClick={() => handleRequestSort('name')}
+                  active={orderBy === 'roomName'}
+                  direction={orderBy === 'roomName' ? order : 'asc'}
+                  onClick={() => handleRequestSort('roomName')}
                 >
-                  Tên
+                  Tên phòng
                 </TableSortLabel>
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'type_room'}
-                  direction={orderBy === 'type_room' ? order : 'asc'}
-                  onClick={() => handleRequestSort('type_room')}
+                  active={orderBy === 'typeRoom'}
+                  direction={orderBy === 'typeRoom' ? order : 'asc'}
+                  onClick={() => handleRequestSort('typeRoom')}
                 >
                   Loại phòng
                 </TableSortLabel>
               </TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'status_session'}
-                  direction={orderBy === 'status_session' ? order : 'asc'}
-                  onClick={() => handleRequestSort('status_session')}
+                  active={orderBy === 'isOpened'}
+                  direction={orderBy === 'isOpened' ? order : 'asc'}
+                  onClick={() => handleRequestSort('isOpened')}
                 >
-                  Trạng thái phiên
+                  Trạng thái phòng
                 </TableSortLabel>
               </TableCell>
               <TableCell>Trạng thái cược</TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'created_at'}
-                  direction={orderBy === 'created_at' ? order : 'asc'}
-                  onClick={() => handleRequestSort('created_at')}
+                  active={orderBy === 'createdAt'}
+                  direction={orderBy === 'createdAt' ? order : 'asc'}
+                  onClick={() => handleRequestSort('createdAt')}
                 >
                   Ngày tạo
                 </TableSortLabel>
@@ -174,26 +173,45 @@ export function RoomsTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedRows.map((row) => (
-              <TableRow hover key={row.id}>
+            {rooms?.docs?.map((row: RoomFormData) => (
+              <TableRow hover key={row._id}>
                 <TableCell>
                   <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                    <Typography variant="subtitle2">{row.name}</Typography>
+                    <Typography variant="subtitle2">{row.roomName}</Typography>
                   </Stack>
                 </TableCell>
-                <TableCell>{row.type_room}</TableCell>
-                <TableCell>{row.status_session}</TableCell>
-                <TableCell>{row.status_bet}</TableCell>
-                <TableCell>{new Date(row.created_at).toLocaleString()}</TableCell>
+                <TableCell>{row.typeRoom}</TableCell>
+                <TableCell>
+                  <Typography
+                    variant="caption"
+                    bgcolor={row.isOpened ? '#1de9b6' : '#e57373'}
+                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                  >
+                    {row.isOpened ? 'Mở' : 'Đóng'}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography
+                    variant="caption"
+                    bgcolor={row.isAcceptBetting ? '#1de9b6' : '#e57373'}
+                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                  >
+                    {row.isAcceptBetting ? 'Cho phép' : 'Không cho phép'}
+                  </Typography>
+                </TableCell>
+                <TableCell>{new Date(row.createdAt).toLocaleString()}</TableCell>
                 <TableCell>
                   <Button
                     variant="contained"
                     color="success"
                     sx={{ mr: 1 }}
-                    onClick={() => router.push(`rooms/${row.id}`)}
+                    onClick={() => router.push(`rooms/${row._id}`)}
                   >
                     Chi tiết
                   </Button>
+                  {/* <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
+                    <DriveFileRenameOutlineIcon />
+                  </Button> */}
                   <Button variant="contained" color="error">
                     <DeleteOutlineOutlinedIcon />
                   </Button>
@@ -206,14 +224,13 @@ export function RoomsTable({
       <Divider />
       <TablePagination
         component="div"
-        count={filteredRows.length}
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
+        count={rooms?.totalDocs || 0}
         page={page}
+        onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
       />
-      <EditRoom openEdit={openEdit} setOpenEdit={setOpenEdit} />
     </Card>
   );
 }

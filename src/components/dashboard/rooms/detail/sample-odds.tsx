@@ -1,49 +1,113 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Button, ButtonBase, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { UpdateOdds } from '@/services/dashboard/bet-room.api';
+import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
+import {
+  Box,
+  Button,
+  ButtonBase,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
+import { toast } from 'react-toastify';
 
-export default function SampleOdds() {
+interface OddsFormData {
+  redOdds: string;
+  blueOdds: string;
+}
+export default function SampleOdds({ data }: { data: any }) {
   const params = useParams<{ id: string }>();
   const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
 
-  const navigate = useRouter();
+  const [formData, setFormData] = useState<OddsFormData>();
+
+  const handleChange = (event: SelectChangeEvent<unknown>) => {
+    if (event.target.name) {
+      setFormData((prev: any) => ({ ...prev, [event.target.name]: event.target.value }));
+    }
+  };
+  const handleUpdateOdds = async () => {
+    try {
+      const response = await UpdateOdds(id, formData);
+      if (response.status === 201) {
+        toast.success('Cập nhật tỷ lệ thành công');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    setFormData({
+      redOdds: data?.redOdds || 10,
+      blueOdds: data?.blueOdds || 10,
+    });
+  }, [data]);
+
   return (
     <>
-      <Box sx={{ width: '100%', py: 2, px: 4, borderRadius: 2, boxShadow: 3, mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Tỉ lệ hiển thị mẫu
-        </Typography>
-        <Grid container spacing={3} marginTop={1}>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel shrink sx={{ fontSize: 20 }}>
-                Tỉ lệ gà đỏ:
-              </InputLabel>
-              <Select label="Loại đường dẫn" name="vidCategory">
-                <MenuItem value="">Chọn loại</MenuItem>
-                <MenuItem value="M3U8">M3U8</MenuItem>
-                <MenuItem value="IFRAME">IFRAME</MenuItem>
-              </Select>
-            </FormControl>
+      {data?.typeRoom === TypeBetRoomEnum.SOLO && (
+        <Box sx={{ width: '100%', py: 2, px: 4, borderRadius: 2, boxShadow: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Tỉ lệ hiển thị mẫu
+          </Typography>
+          <Grid container spacing={3} marginTop={1}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel shrink sx={{ fontSize: 20 }}>
+                  Tỉ lệ gà đỏ:
+                </InputLabel>
+                <Select
+                  label=" Tỉ lệ gà đỏ:"
+                  value={Number(formData?.redOdds)}
+                  name="redOdds"
+                  sx={{ fontSize: 20 }}
+                  onChange={handleChange}
+                >
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <MenuItem key={i} value={(i + 1) * 0.5} sx={{ fontSize: 20 }}>
+                      {(i + 1) * 0.5}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel shrink sx={{ fontSize: 20 }}>
+                  Tỉ lệ gà xanh:
+                </InputLabel>
+                <Select
+                  label="Tỉ lệ gà xanh:"
+                  name="blueOdds"
+                  value={Number(formData?.blueOdds)}
+                  onChange={handleChange}
+                  sx={{ fontSize: 20 }}
+                >
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <MenuItem key={i} value={(i + 1) * 0.5} sx={{ fontSize: 20 }}>
+                      {(i + 1) * 0.5}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel shrink sx={{ fontSize: 20 }}>
-                Tỉ lệ gà xanh:
-              </InputLabel>
-              <Select label="Loại đường dẫn" name="vidCategory">
-                <MenuItem value="">Chọn loại</MenuItem>
-                <MenuItem value="M3U8">M3U8</MenuItem>
-                <MenuItem value="IFRAME">IFRAME</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-        <Box sx={{ width: '100%', mt: 4, display: 'flex', gap: 2, textAlign: 'right', justifyContent: 'center' }}>
-          <Button variant="contained">Cập nhật</Button>
+          <Box sx={{ width: '100%', mt: 4, display: 'flex', gap: 2, textAlign: 'right', justifyContent: 'center' }}>
+            <Button variant="contained" onClick={handleUpdateOdds}>
+              Cập nhật
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      )}
+
       <Box
         sx={{
           width: '100%',

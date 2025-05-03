@@ -11,16 +11,16 @@ export interface UserInterface {
   password?: string;
   email?: string;
   phone?: string;
-  last_login_at?: Date;
+  last_login_at?: Date | string;
   ipv6?: string;
-  status?: UserStatus;
+  status?: UserStatus | string;
   referral_code?: string;
-  referral_id?: string; // ID của người giới thiệu
+  referral_receiver_id?: string; // ID của người giới thiệu
   device_id?: string;
-  role?: RoleUsers;
+  role?: RoleUsers | string;
   bank?: BankInteface;
   money?: number;
 
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }

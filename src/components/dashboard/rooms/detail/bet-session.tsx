@@ -1,14 +1,25 @@
 'use client';
 
 import * as React from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api'; // Assumed adapted for bet sessions
+
+import { paginateBetSessionApi } from '@/services/dashboard/bet-session.api';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
   Box,
   Button,
-  Paper,
+  Card,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TablePagination,
   TableRow,
@@ -20,9 +31,9 @@ import {
 // Định nghĩa interface cho dữ liệu bảng
 interface Betsession {
   code: string;
-  status: string;
-  created_at: string;
-  profit: number;
+  isOpened: boolean;
+  createdAt: string;
+  revenue: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -31,171 +42,181 @@ interface Column {
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
-  format?: (value: number) => string;
+  format?: (value: string) => string;
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã (Code)', minWidth: 100, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'code', label: 'Mã cược', minWidth: 100, align: 'left' },
+  { id: 'isOpened', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   {
-    id: 'profit',
-    label: 'Lợi nhuận (VND)',
+    id: 'revenue',
+    label: 'Doanh thu (VND)',
     minWidth: 120,
     align: 'right',
-    format: (value: number) => value.toLocaleString('vi-VN'),
+    format: (value: string) => parseFloat(value).toLocaleString('vi-VN'),
   },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(code: string, status: string, created_at: string, profit: number): Betsession {
-  return { code, status, created_at, profit };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: Betsession[] = [
-  createData('BET001', 'Pending', '2025-04-23 10:00', 500),
-  createData('BET002', 'Won', '2025-04-23 11:00', 1000),
-  createData('BET003', 'Lost', '2025-04-23 12:00', -200),
-  createData('BET004', 'Pending', '2025-04-23 13:00', 0),
-  createData('BET005', 'Won', '2025-04-23 14:00', 750),
-  createData('BET006', 'Lost', '2025-04-23 15:00', -300),
-];
-
-const BetSessionComponent: React.FC = () => {
+export function BetSessionComponent(): React.JSX.Element {
+  const [isReload, setIsReload] = React.useState<boolean>(true);
+  const [sessions, setSessions] = React.useState<any>(null);
   const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
-  const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof Betsession | ''>('');
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<Betsession[]>(initialData);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
+  const [filter, setFilter] = React.useState({ code: '', isOpened: '' });
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [orderBy, setOrderBy] = React.useState<keyof Betsession>('code');
 
-  // Hàm xử lý tìm kiếm
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value.toLowerCase();
-    setSearchTerm(value);
-    setPage(0); // Reset về trang 1 khi tìm kiếm
-    const filtered = initialData.filter(
-      (row) => row.code.toLowerCase().includes(value) || row.status.toLowerCase().includes(value)
-    );
-    setFilteredData(filtered);
-  };
+  const params = useParams<{ id: string }>();
+  const id = params?.id || '';
+  const router = useRouter();
 
-  // Hàm xử lý sắp xếp
-  const handleSort = (field: keyof Betsession) => {
-    const isAsc = sortField === field && sortOrder === 'asc';
-    const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
-    setSortField(field);
-    setSortOrder(newOrder);
-
-    const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'profit') {
-        return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
+  const fetchSessions = async () => {
+    try {
+      const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
+      const response = await paginateBetSessionApi(id, query); // Assumed adapted for bet sessions
+      if (response.status === 200 || response.status === 201) {
+        setSessions(response.data);
       }
-      return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
-    });
-    setFilteredData(sortedData);
+    } catch (error) {
+      console.error('Failed to fetch bet sessions:', error);
+    }
   };
 
-  // Hàm xử lý khi nhấp nút "Xem chi tiết"
-  const handleViewDetail = (code: string) => {
-    // Thay bằng logic thực tế (ví dụ: mở modal, chuyển hướng)
-    alert(`Xem chi tiết cho mã: ${code}`);
+  React.useEffect(() => {
+    if (isReload) {
+      fetchSessions();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    fetchSessions();
+  }, [page, rowsPerPage, filter, order, orderBy]);
+
+  const handleRequestSort = (property: keyof Betsession) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
   };
 
-  // Hàm xử lý thay đổi trang
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleFilterChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
+  ) => {
+    const { name, value } = event.target;
+    setFilter((prev) => ({ ...prev, [name]: value }));
+    setPage(0); // Reset to first page when filtering
+  };
+
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to first page
+  };
+
+  const handleViewDetail = (code: string) => {
+    router.push(`/sessions/${code}`); // Navigate to session detail page
+  };
+
+  const handleDelete = (code: string) => {
+    // Placeholder for delete functionality
+    console.log(`Delete session with code: ${code}`);
+    setIsReload(true); // Trigger reload after delete
   };
 
   return (
-    <Box
-      sx={{
-        py: 2,
-        px: 4,
-        borderRadius: 2,
-        boxShadow: 3,
-        mt: 4,
-        overflow: 'auto',
-      }}
-    >
-      <Paper sx={{ width: '100%' }}>
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Phiên cược hiện tại
-        </Typography>
+    <Card>
+      <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <TextField
-          label="Tìm kiếm"
-          variant="outlined"
+          label="Tìm theo mã phiên"
+          name="code"
+          value={filter.code}
+          onChange={handleFilterChange}
           size="small"
-          fullWidth
-          value={searchTerm}
-          onChange={handleSearch}
-          sx={{ mb: 2, mx: 2 }}
         />
-        <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-session-table">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell key={column.id} align={column.align} sx={{ minWidth: column.minWidth, top: 0 }}>
-                    {column.id !== 'action' ? (
-                      <TableSortLabel
-                        active={sortField === column.id}
-                        direction={sortField === column.id ? sortOrder : 'asc'}
-                        onClick={() => handleSort(column.id as keyof Betsession)}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    ) : (
-                      column.label
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-                <TableRow hover tabIndex={-1} key={row.code}>
-                  {columns.map((column) => {
-                    if (column.id === 'action') {
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleViewDetail(row.code)}>
-                            Xem chi tiết
-                          </Button>
-                        </TableCell>
-                      );
-                    }
-                    const value = row[column.id as keyof Betsession];
-                    return (
-                      <TableCell key={column.id} align={column.align}>
-                        {column.format && typeof value === 'number' ? column.format(value) : value}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
+        <FormControl sx={{ minWidth: 200 }} size="small">
+          <InputLabel>Trạng thái phiên</InputLabel>
+          <Select label="Trạng thái phiên" name="isOpened" value={filter.isOpened} onChange={handleFilterChange}>
+            <MenuItem value="">Tất cả</MenuItem>
+            <MenuItem value="true">Mở</MenuItem>
+            <MenuItem value="false">Đóng</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+      <Box sx={{ overflowX: 'auto' }}>
+        <Table sx={{ minWidth: '800px' }}>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell key={column.id} align={column.align} sx={{ minWidth: column.minWidth }}>
+                  {column.id !== 'action' ? (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : 'asc'}
+                      onClick={() => handleRequestSort(column.id as keyof Betsession)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
+                </TableCell>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
-    </Box>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sessions?.docs?.map((row: Betsession) => (
+              <TableRow hover key={row.code}>
+                <TableCell>
+                  <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
+                    <Typography variant="subtitle2">{row.code}</Typography>
+                  </Stack>
+                </TableCell>
+                <TableCell>
+                  <Typography
+                    variant="caption"
+                    bgcolor={row.isOpened ? '#1de9b6' : '#e57373'}
+                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                  >
+                    {row.isOpened ? 'Mở' : 'Đóng'}
+                  </Typography>
+                </TableCell>
+                <TableCell>{new Date(row.createdAt).toLocaleString()}</TableCell>
+                <TableCell align="right">
+                  {columns.find((col) => col.id === 'revenue')?.format?.(row.revenue) || row.revenue}
+                </TableCell>
+                <TableCell align="center">
+                  <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleViewDetail(row.code)}>
+                    Chi tiết
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+      <Divider />
+      <TablePagination
+        component="div"
+        count={sessions?.totalDocs || 0}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[5, 10, 25]}
+      />
+    </Card>
   );
-};
+}
 
 export default BetSessionComponent;

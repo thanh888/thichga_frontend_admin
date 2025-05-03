@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { paginateAccountApi } from '@/services/dashboard/user.api';
+import { paginateAdminApi } from '@/services/dashboard/user.api';
 import { rolesAdmin } from '@/utils/functions/default-function';
-import { UserInterface } from '@/utils/interfaces/user.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
@@ -35,8 +34,11 @@ export interface AdminFormData {
   username: string;
   role: string;
 }
-
-export function AdminsTable(): React.JSX.Element {
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
+}
+export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
   const [accounts, setAccounts] = React.useState<any>(null);
 
   const [page, setPage] = React.useState<number>(0);
@@ -53,7 +55,7 @@ export function AdminsTable(): React.JSX.Element {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.username}&role=${filter.role}&sort=${sortQuery}`;
-      const response = await paginateAccountApi(query);
+      const response = await paginateAdminApi(query);
 
       if (response.status === 200 || response.status === 201) {
         setAccounts(response.data);
@@ -64,7 +66,15 @@ export function AdminsTable(): React.JSX.Element {
   };
 
   React.useEffect(() => {
+    if (isReload) {
+      fetchAccounts();
+      setIsReload(false);
+    }
+  }, [page, rowsPerPage, filter, order, orderBy, isReload]);
+
+  React.useEffect(() => {
     fetchAccounts();
+    setIsReload(false);
   }, [page, rowsPerPage, filter, order, orderBy]);
 
   const handleRequestSort = (property: keyof AdminFormData) => {
@@ -148,7 +158,7 @@ export function AdminsTable(): React.JSX.Element {
                     <Typography variant="subtitle2">{row.username}</Typography>
                   </Stack>
                 </TableCell>
-                <TableCell>{row.role}</TableCell>
+                <TableCell>{rolesAdmin.find((item) => item.value === row.role)?.label || ''}</TableCell>
                 <TableCell>
                   <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
                     <DriveFileRenameOutlineIcon />
@@ -175,8 +185,7 @@ export function AdminsTable(): React.JSX.Element {
         rowsPerPageOptions={[10, 25, 50, 100]}
       />
 
-      {/* Dialog chỉnh sửa */}
-      <EditAdmin openEdit={openEdit} setOpenEdit={setOpenEdit} />
+      <EditAdmin openEdit={openEdit} setOpenEdit={setOpenEdit} setIsReload={setIsReload} />
     </Card>
   );
 }

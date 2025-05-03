@@ -4,6 +4,7 @@ import * as React from 'react';
 import { UpdateSettingApi } from '@/services/dashboard/setting.api';
 import { Alert, Button, Typography } from '@mui/material';
 import Card from '@mui/material/Card';
+import { toast } from 'react-toastify';
 
 import { SettingContext } from '@/contexts/setting-context';
 import ToggleSwitch from '@/components/checkbox/toggle-switch';
@@ -24,10 +25,10 @@ export function AdminsStatusCode(): React.JSX.Element {
         if (typeof checkSettingSession === 'function') {
           await checkSettingSession();
         }
-        <Alert severity="success">Cập nhật thành công</Alert>;
+        toast.success('Cập nhật thành công');
       }
     } catch (error) {
-      <Alert severity="error">Cập nhật thất bại</Alert>;
+      toast.error('Cập nhật thất bại');
     }
   };
   return (
