@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { paginate } from '@/services/dashboard/deposit-history.api';
 import {
   Box,
   Button,
@@ -17,14 +18,16 @@ import {
   Typography,
 } from '@mui/material';
 
+// Assumed API for deposit history
+
 // Định nghĩa interface cho dữ liệu bảng
 interface DepositHistoryFormData {
-  code: string;
-  username: string;
+  userID: any;
   money: number;
-  created_at: string;
+  adminID: any;
   status: string;
-  admin_accept: string;
+  code: string;
+  createdAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -37,8 +40,8 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã cược', minWidth: 100, align: 'left' },
-  { id: 'username', label: 'Tên người dùng', minWidth: 120, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người dùng', minWidth: 120, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -46,75 +49,83 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 120, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 120, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(
-  code: string,
-  username: string,
-  money: number,
-  created_at: string,
-  status: string,
-  admin_accept: string
-): DepositHistoryFormData {
-  return { code, username, money, created_at, status, admin_accept };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: DepositHistoryFormData[] = [
-  createData('BET001', 'user1', 500, '2025-04-23 10:00', 'Pending', 'Waiting'),
-  createData('BET002', 'user2', 1000, '2025-04-23 11:00', 'Won', 'Accepted'),
-  createData('BET003', 'user3', 200, '2025-04-23 12:00', 'Lost', 'Rejected'),
-  createData('BET004', 'user4', 0, '2025-04-23 13:00', 'Pending', 'Waiting'),
-  createData('BET005', 'user5', 750, '2025-04-23 14:00', 'Won', 'Accepted'),
-  createData('BET006', 'user6', 300, '2025-04-23 15:00', 'Lost', 'Rejected'),
-];
-
-const DepositHistoryTable: React.FC = () => {
+const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData | ''>('');
+  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<DepositHistoryFormData[]>(initialData);
+  const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
+    docs: [],
+    totalDocs: 0,
+  });
+
+  // Fetch data using API
+  const fetchDeposits = async () => {
+    try {
+      const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}`;
+      const response = await paginate(query);
+      if (response.status === 200 || response.status === 201) {
+        // Transform userID and adminID to usernames
+        const transformedData = {
+          ...response.data,
+          docs: response.data.docs.map((item: any) => ({
+            ...item,
+            userID: item.userID?.username || 'N/A',
+            adminID: item.adminID?.username || 'N/A',
+          })),
+        };
+        setData(transformedData);
+      } else {
+        setData({ docs: [], totalDocs: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch deposit history:', error);
+      setData({ docs: [], totalDocs: 0 });
+    }
+  };
+
+  React.useEffect(() => {
+    if (isReload) {
+      fetchDeposits();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    fetchDeposits();
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder]);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value.toLowerCase();
-    setSearchTerm(value);
-    setPage(0); // Reset về trang 1 khi tìm kiếm
-    const filtered = initialData.filter(
-      (row) =>
-        row.code.toLowerCase().includes(value) ||
-        row.username.toLowerCase().includes(value) ||
-        row.status.toLowerCase().includes(value)
-    );
-    setFilteredData(filtered);
+    setSearchTerm(event.target.value);
+    setPage(0);
   };
 
   // Hàm xử lý sắp xếp
   const handleSort = (field: keyof DepositHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
-    const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
     setSortField(field);
-    setSortOrder(newOrder);
-
-    const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'money') {
-        return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
-      }
-      return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
-    });
-    setFilteredData(sortedData);
+    setSortOrder(isAsc ? 'desc' : 'asc');
   };
 
   // Hàm xử lý khi nhấp nút "Xem chi tiết"
   const handleViewDetail = (code: string) => {
-    // Thay bằng logic thực tế (ví dụ: mở modal, chuyển hướng)
+    // Placeholder for navigation or modal
     alert(`Xem chi tiết cho mã: ${code}`);
+    setIsReload(true); // Trigger refresh after action
   };
 
   // Hàm xử lý thay đổi trang
@@ -153,7 +164,7 @@ const DepositHistoryTable: React.FC = () => {
           sx={{ mb: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-history-table">
+          <Table stickyHeader aria-label="deposit-history-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
@@ -174,7 +185,7 @@ const DepositHistoryTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
+              {data.docs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
@@ -186,7 +197,33 @@ const DepositHistoryTable: React.FC = () => {
                         </TableCell>
                       );
                     }
-                    const value = row[column.id as keyof DepositHistoryFormData];
+                    let value = row[column.id as keyof DepositHistoryFormData];
+                    if (column.id === 'userID') {
+                      value = row.userID || 'N/A';
+                    } else if (column.id === 'adminID') {
+                      value = row.adminID || 'N/A';
+                    } else if (column.id === 'status') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.status === 'Won' ? '#1de9b6' : row.status === 'Lost' ? '#e57373' : '#bdbdbd'}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                          >
+                            {row.status}
+                          </Typography>
+                        </TableCell>
+                      );
+                    } else if (column.id === 'createdAt') {
+                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      });
+                    }
                     return (
                       <TableCell key={column.id} align={column.align}>
                         {column.format && typeof value === 'number' ? column.format(value) : value}
@@ -201,7 +238,7 @@ const DepositHistoryTable: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredData.length}
+          count={data.totalDocs}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

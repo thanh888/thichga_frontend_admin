@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
+import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import {
   Box,
   Button,
@@ -19,13 +21,16 @@ import {
   Typography,
 } from '@mui/material';
 
+// Assumed API for deposit history
+
 // Định nghĩa interface cho dữ liệu bảng
 interface DepositHistoryFormData {
-  username: string;
+  userID: any;
   money: number;
-  created_at: string;
+  adminID: any;
   status: string;
-  admin_accept: string;
+  code: string;
+  createdAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -38,7 +43,8 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'username', label: 'Tên người dùng', minWidth: 100, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -46,88 +52,78 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 100, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(
-  username: string,
-  money: number,
-  created_at: string,
-  status: string,
-  admin_accept: string
-): DepositHistoryFormData {
-  return { username, money, created_at, status, admin_accept };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: DepositHistoryFormData[] = [
-  createData('user1', 500, '2025-04-23 10:00', 'Pending', 'Waiting'),
-  createData('user2', 1000, '2025-04-23 11:00', 'Won', 'Accepted'),
-  createData('user3', 200, '2025-04-23 12:00', 'Lost', 'Rejected'),
-  createData('user4', 0, '2025-04-23 13:00', 'Pending', 'Waiting'),
-  createData('user5', 750, '2025-04-23 14:00', 'Won', 'Accepted'),
-  createData('user6', 300, '2025-04-23 15:00', 'Lost', 'Rejected'),
-];
-
-const DepositStatusTable: React.FC = () => {
+const DepositStatusTable: React.FC<Props> = () => {
+  const [isReload, setIsReload] = React.useState<boolean>(true);
   const [tabValue, setTabValue] = React.useState<number>(0);
-  const [page, setPage] = React.useState<{ [key: string]: number }>({
-    Pending: 0,
-    Won: 0,
-    Lost: 0,
-  });
+  const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData | ''>('');
+  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
+    docs: [],
+    totalDocs: 0,
+  });
 
-  // Lọc dữ liệu theo trạng thái
-  const filteredData = React.useMemo(() => {
-    const status = tabValue === 0 ? 'Pending' : tabValue === 1 ? 'Won' : 'Lost';
-    let data = initialData.filter((row) => row.status === status);
+  // const [status, setStatus] = React.useState<string>(DepositStatusEnum.PENDING);
+  // Lấy trạng thái từ giá trị tab
+  const getStatus = (tab: number) => {
+    return tab === 0 ? DepositStatusEnum.PENDING : tab === 1 ? DepositStatusEnum.SUCCESS : DepositStatusEnum.REJECT;
+  };
 
-    // Tìm kiếm
-    if (searchTerm) {
-      data = data.filter(
-        (row) =>
-          row.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Fetch data using API
+  const fetchDeposits = async () => {
+    try {
+      const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
+      const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      const response = await DepositByStatusApi(query);
+      if (response.status === 200 || response.status === 201) {
+        // Transform userID and adminID to usernames
+        const transformedData = {
+          ...response.data,
+          docs: response.data.docs.map((item: any) => ({
+            ...item,
+            userID: item.userID?.username || 'N/A',
+            adminID: item.adminID?.username || 'N/A',
+          })),
+        };
+        setData(transformedData);
+      } else {
+        setData({ docs: [], totalDocs: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch deposit history:', error);
+      setData({ docs: [], totalDocs: 0 });
     }
+  };
 
-    // Sắp xếp
-    if (sortField) {
-      data = [...data].sort((a, b) => {
-        if (sortField === 'money') {
-          return sortOrder === 'asc' ? a[sortField] - b[sortField] : b[sortField] - a[sortField];
-        }
-        return sortOrder === 'asc'
-          ? a[sortField].localeCompare(b[sortField])
-          : b[sortField].localeCompare(a[sortField]);
-      });
+  React.useEffect(() => {
+    if (isReload) {
+      fetchDeposits();
+      setIsReload(false);
     }
+  }, [isReload]);
 
-    return data;
-  }, [tabValue, searchTerm, sortField, sortOrder]);
+  React.useEffect(() => {
+    fetchDeposits();
+  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder]);
 
   // Xử lý thay đổi tab
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    setPage((prev) => ({ ...prev, [getStatus(newValue)]: 0 })); // Reset trang khi đổi tab
-  };
-
-  // Lấy trạng thái từ giá trị tab
-  const getStatus = (tab: number) => {
-    return tab === 0 ? 'Pending' : tab === 1 ? 'Won' : 'Lost';
-  };
-
-  // Hàm xử lý tìm kiếm
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: 0 }));
+    setPage((prev) => 0);
   };
 
   // Hàm xử lý sắp xếp
@@ -138,20 +134,21 @@ const DepositStatusTable: React.FC = () => {
   };
 
   // Hàm xử lý cập nhật trạng thái
-  const handleUpdateStatus = (username: string, currentStatus: string) => {
-    // Thay bằng logic thực tế (ví dụ: gọi API để cập nhật trạng thái)
-    alert(`Cập nhật trạng thái cho người dùng: ${username} từ ${currentStatus}`);
+  const handleUpdateStatus = (code: string, currentStatus: string) => {
+    // Placeholder for API call
+    alert(`Cập nhật trạng thái cho giao dịch: ${code} từ ${currentStatus}`);
+    setIsReload(true); // Trigger refresh after update
   };
 
   // Hàm xử lý thay đổi trang
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: newPage }));
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
   };
 
   // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: 0 }));
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to first page
   };
 
   return (
@@ -206,17 +203,9 @@ const DepositStatusTable: React.FC = () => {
           <Tab label="Đã nạp" />
           <Tab label="Đã từ chối" />
         </Tabs>
-        <TextField
-          label="Tìm kiếm"
-          variant="outlined"
-          size="small"
-          fullWidth
-          value={searchTerm}
-          onChange={handleSearch}
-          sx={{ my: 2, width: '40%' }}
-        />
+
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-session-table">
+          <Table stickyHeader aria-label="deposit-status-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
@@ -237,42 +226,66 @@ const DepositStatusTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData
-                .slice(page[getStatus(tabValue)] * rowsPerPage, page[getStatus(tabValue)] * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow hover tabIndex={-1} key={row.username}>
-                    {columns.map((column) => {
-                      if (column.id === 'action') {
-                        return (
-                          <TableCell key={column.id} align={column.align}>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleUpdateStatus(row.username, row.status)}
-                            >
-                              Cập nhật trạng thái
-                            </Button>
-                          </TableCell>
-                        );
-                      }
-                      const value = row[column.id as keyof DepositHistoryFormData];
+              {data?.docs?.map((row) => (
+                <TableRow hover tabIndex={-1} key={row.code}>
+                  {columns.map((column) => {
+                    if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          {column.format && typeof value === 'number' ? column.format(value) : value}
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleUpdateStatus(row.code, row.status)}
+                          >
+                            Cập nhật trạng thái
+                          </Button>
                         </TableCell>
                       );
-                    })}
-                  </TableRow>
-                ))}
+                    }
+                    let value = row[column.id as keyof DepositHistoryFormData];
+                    if (column.id === 'userID') {
+                      value = row?.userID?.username || 'N/A';
+                    } else if (column.id === 'adminID') {
+                      value = row?.adminID?.username || 'N/A';
+                    } else if (column.id === 'status') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.status === 'Won' ? '#1de9b6' : row.status === 'Lost' ? '#e57373' : '#bdbdbd'}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                          >
+                            {row.status}
+                          </Typography>
+                        </TableCell>
+                      );
+                    } else if (column.id === 'createdAt') {
+                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      });
+                    }
+                    return (
+                      <TableCell key={column.id} align={column.align}>
+                        {column.format && typeof value === 'number' ? column.format(value) : value}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredData.length}
+          count={data?.totalDocs}
           rowsPerPage={rowsPerPage}
-          page={page[getStatus(tabValue)]}
+          page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />

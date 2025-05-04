@@ -18,7 +18,6 @@ export function AdminsStatusCode(): React.JSX.Element {
   const [referralCodeEnabled, setReferralCodeEnabled] = React.useState<boolean>(setting?.referralCodeEnabled ?? false);
 
   const handleUpdateDepositMode = async () => {
-    console.log(setting);
     try {
       const reponse = await UpdateSettingApi(setting?._id, { referralCodeEnabled });
       if (reponse.status === 200 || reponse.status === 201) {
