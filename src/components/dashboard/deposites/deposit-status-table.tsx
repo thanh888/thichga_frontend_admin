@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import {
   Box,
@@ -17,11 +18,10 @@ import {
   TableRow,
   TableSortLabel,
   Tabs,
-  TextField,
   Typography,
 } from '@mui/material';
 
-// Assumed API for deposit history
+import UpdateDepositStatusComponent from './update-deposit-status';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface DepositHistoryFormData {
@@ -53,7 +53,7 @@ const columns: Column[] = [
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 120, align: 'left' },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
@@ -63,23 +63,33 @@ interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const DepositStatusTable: React.FC<Props> = () => {
-  const [isReload, setIsReload] = React.useState<boolean>(true);
+const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [tabValue, setTabValue] = React.useState<number>(0);
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
-  const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
     docs: [],
     totalDocs: 0,
   });
+  const [openDialog, setOpenDialog] = React.useState<any>(null);
 
-  // const [status, setStatus] = React.useState<string>(DepositStatusEnum.PENDING);
-  // Lấy trạng thái từ giá trị tab
+  const statusLabels: { [key in DepositStatusEnum]: string } = {
+    [DepositStatusEnum.PENDING]: 'Chờ xử lý',
+    [DepositStatusEnum.SUCCESS]: 'Thành công',
+    [DepositStatusEnum.REJECT]: 'Đã từ chối',
+  };
+
+  // Get status from tab value
   const getStatus = (tab: number) => {
-    return tab === 0 ? DepositStatusEnum.PENDING : tab === 1 ? DepositStatusEnum.SUCCESS : DepositStatusEnum.REJECT;
+    if (tab === 0) {
+      return DepositStatusEnum.PENDING;
+    } else if (tab === 1) {
+      return DepositStatusEnum.SUCCESS;
+    } else {
+      return DepositStatusEnum.REJECT;
+    }
   };
 
   // Fetch data using API
@@ -87,16 +97,15 @@ const DepositStatusTable: React.FC<Props> = () => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
-        // Transform userID and adminID to usernames
         const transformedData = {
           ...response.data,
           docs: response.data.docs.map((item: any) => ({
             ...item,
-            userID: item.userID?.username || 'N/A',
-            adminID: item.adminID?.username || 'N/A',
+            userID: item.userID?.username ?? 'N/A',
+            adminID: item.adminID?.username ?? 'N/A',
           })),
         };
         setData(transformedData);
@@ -118,37 +127,35 @@ const DepositStatusTable: React.FC<Props> = () => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder]);
+  }, [tabValue, page, rowsPerPage, sortField, sortOrder]);
 
-  // Xử lý thay đổi tab
+  // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    setPage((prev) => 0);
+    setPage(0);
   };
 
-  // Hàm xử lý sắp xếp
+  // Handle sorting
   const handleSort = (field: keyof DepositHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
     setSortField(field);
     setSortOrder(isAsc ? 'desc' : 'asc');
   };
 
-  // Hàm xử lý cập nhật trạng thái
-  const handleUpdateStatus = (code: string, currentStatus: string) => {
-    // Placeholder for API call
-    alert(`Cập nhật trạng thái cho giao dịch: ${code} từ ${currentStatus}`);
-    setIsReload(true); // Trigger refresh after update
+  // Open dialog for status update
+  const handleOpenDialog = (data: any) => {
+    setOpenDialog(data);
   };
 
-  // Hàm xử lý thay đổi trang
+  // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // Reset to first page
+    setPage(0);
   };
 
   return (
@@ -199,8 +206,8 @@ const DepositStatusTable: React.FC<Props> = () => {
             },
           }}
         >
-          <Tab label="Đang chờ" />
-          <Tab label="Đã nạp" />
+          <Tab label="Chờ xử lý" />
+          <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
 
@@ -232,11 +239,7 @@ const DepositStatusTable: React.FC<Props> = () => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleUpdateStatus(row.code, row.status)}
-                          >
+                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
                             Cập nhật trạng thái
                           </Button>
                         </TableCell>
@@ -244,18 +247,24 @@ const DepositStatusTable: React.FC<Props> = () => {
                     }
                     let value = row[column.id as keyof DepositHistoryFormData];
                     if (column.id === 'userID') {
-                      value = row?.userID?.username || 'N/A';
+                      value = row.userID || 'N/A';
                     } else if (column.id === 'adminID') {
-                      value = row?.adminID?.username || 'N/A';
+                      value = row.adminID || 'N/A';
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>
                           <Typography
                             variant="caption"
-                            bgcolor={row.status === 'Won' ? '#1de9b6' : row.status === 'Lost' ? '#e57373' : '#bdbdbd'}
+                            bgcolor={
+                              row.status === DepositStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === DepositStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {row.status}
+                            {statusLabels[row.status as DepositStatusEnum] || row.status}
                           </Typography>
                         </TableCell>
                       );
@@ -290,6 +299,8 @@ const DepositStatusTable: React.FC<Props> = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <UpdateDepositStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
     </Box>
   );
 };

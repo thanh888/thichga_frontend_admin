@@ -1,6 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
+import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import {
   Box,
   Button,
@@ -19,15 +22,18 @@ import {
   Typography,
 } from '@mui/material';
 
+import UpdateWithdrawStatusComponent from './update-withdraw-status';
+
 // Định nghĩa interface cho dữ liệu bảng
 interface WithdrawHistoryFormData {
-  username: string;
-  bank: string;
+  bank: any;
+  feedback: string;
+  userID: any;
   money: number;
-  note: string;
-  created_at: string;
+  adminID: any;
   status: string;
-  admin_accept: string;
+  code: string;
+  createdAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -40,7 +46,8 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'username', label: 'Tên người dùng', minWidth: 100, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   { id: 'bank', label: 'Ngân hàng', minWidth: 120, align: 'left' },
   {
     id: 'money',
@@ -49,117 +56,117 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'note', label: 'Ghi chú', minWidth: 150, align: 'left' },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 100, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(
-  username: string,
-  bank: string,
-  money: number,
-  note: string,
-  created_at: string,
-  status: string,
-  admin_accept: string
-): WithdrawHistoryFormData {
-  return { username, bank, money, note, created_at, status, admin_accept };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: WithdrawHistoryFormData[] = [
-  createData('user1', 'Vietcombank', 500, 'Rút tiền lần 1', '2025-04-23 10:00', 'Pending', 'Waiting'),
-  createData('user2', 'Techcombank', 1000, 'Rút thưởng', '2025-04-23 11:00', 'Won', 'Accepted'),
-  createData('user3', 'MB Bank', 200, 'Rút tiền', '2025-04-23 12:00', 'Lost', 'Rejected'),
-  createData('user4', 'VPBank', 0, 'Kiểm tra rút', '2025-04-23 13:00', 'Pending', 'Waiting'),
-  createData('user5', 'Sacombank', 750, 'Rút tiền lần 2', '2025-04-23 14:00', 'Won', 'Accepted'),
-  createData('user6', 'ACB', 300, 'Rút tiền', '2025-04-23 15:00', 'Lost', 'Rejected'),
-];
-
-const WithdrawStatusTable: React.FC = () => {
+const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [tabValue, setTabValue] = React.useState<number>(0);
-  const [page, setPage] = React.useState<{ [key: string]: number }>({
-    Pending: 0,
-    Won: 0,
-    Lost: 0,
-  });
+  const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData | ''>('');
+  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
+    docs: [],
+    totalDocs: 0,
+  });
+  const [openDialog, setOpenDialog] = React.useState<any>(null);
 
-  // Lọc dữ liệu theo trạng thái
-  const filteredData = React.useMemo(() => {
-    const status = tabValue === 0 ? 'Pending' : tabValue === 1 ? 'Won' : 'Lost';
-    let data = initialData.filter((row) => row.status === status);
+  const statusLabels: { [key in WithdrawStatusEnum]: string } = {
+    [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+    [WithdrawStatusEnum.SUCCESS]: 'Thành công',
+    [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
+  };
 
-    // Tìm kiếm
-    if (searchTerm) {
-      data = data.filter(
-        (row) =>
-          row.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.bank.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.note.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          row.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Get status from tab value
+  const getStatus = (tab: number) => {
+    if (tab === 0) {
+      return WithdrawStatusEnum.PENDING;
+    } else if (tab === 1) {
+      return WithdrawStatusEnum.SUCCESS;
+    } else {
+      return WithdrawStatusEnum.REJECT;
     }
+  };
 
-    // Sắp xếp
-    if (sortField) {
-      data = [...data].sort((a, b) => {
-        if (sortField === 'money') {
-          return sortOrder === 'asc' ? a[sortField] - b[sortField] : b[sortField] - a[sortField];
-        }
-        return sortOrder === 'asc'
-          ? a[sortField].localeCompare(b[sortField])
-          : b[sortField].localeCompare(a[sortField]);
-      });
+  // Fetch data using API
+  const fetchWithdraws = async () => {
+    try {
+      const status = getStatus(tabValue) ?? WithdrawStatusEnum.PENDING;
+      const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      const response = await WithdrawByStatusApi(query);
+      if (response.status === 200 || response.status === 201) {
+        const transformedData = {
+          ...response.data,
+          docs: response.data.docs.map((item: any) => ({
+            ...item,
+            userID: item.userID?.username ?? 'N/A',
+            adminID: item.adminID?.username ?? 'N/A',
+          })),
+        };
+        setData(transformedData);
+      } else {
+        setData({ docs: [], totalDocs: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch withdraw history:', error);
+      setData({ docs: [], totalDocs: 0 });
     }
+  };
 
-    return data;
-  }, [tabValue, searchTerm, sortField, sortOrder]);
+  React.useEffect(() => {
+    if (isReload) {
+      fetchWithdraws();
+      setIsReload(false);
+    }
+  }, [isReload]);
 
-  // Xử lý thay đổi tab
+  React.useEffect(() => {
+    fetchWithdraws();
+  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder]);
+
+  // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    setPage((prev) => ({ ...prev, [getStatus(newValue)]: 0 })); // Reset trang khi đổi tab
+    setPage(0);
   };
 
-  // Lấy trạng thái từ giá trị tab
-  const getStatus = (tab: number) => {
-    return tab === 0 ? 'Pending' : tab === 1 ? 'Won' : 'Lost';
-  };
-
-  // Hàm xử lý tìm kiếm
+  // Handle search
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: 0 }));
+    setPage(0);
   };
 
-  // Hàm xử lý sắp xếp
+  // Handle sorting
   const handleSort = (field: keyof WithdrawHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
     setSortField(field);
     setSortOrder(isAsc ? 'desc' : 'asc');
   };
 
-  // Hàm xử lý cập nhật trạng thái
-  const handleUpdateStatus = (username: string, currentStatus: string) => {
-    // Thay bằng logic thực tế (ví dụ: gọi API để cập nhật trạng thái)
-    alert(`Cập nhật trạng thái cho người dùng: ${username} từ ${currentStatus}`);
+  // Open dialog for status update
+  const handleOpenDialog = (data: any) => {
+    setOpenDialog(data);
   };
 
-  // Hàm xử lý thay đổi trang
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: newPage }));
+  // Handle page change
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage((prev) => ({ ...prev, [getStatus(tabValue)]: 0 }));
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   return (
@@ -210,8 +217,8 @@ const WithdrawStatusTable: React.FC = () => {
             },
           }}
         >
-          <Tab label="Chờ thanh toán" />
-          <Tab label="Đã thanh toán" />
+          <Tab label="Chờ xử lý" />
+          <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
         <TextField
@@ -221,10 +228,10 @@ const WithdrawStatusTable: React.FC = () => {
           fullWidth
           value={searchTerm}
           onChange={handleSearch}
-          sx={{ my: 2, width: '40%' }}
+          sx={{ mb: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="withdraw-history-table">
+          <Table stickyHeader aria-label="withdraw-status-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
@@ -245,46 +252,76 @@ const WithdrawStatusTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData
-                .slice(page[getStatus(tabValue)] * rowsPerPage, page[getStatus(tabValue)] * rowsPerPage + rowsPerPage)
-                .map((row) => (
-                  <TableRow hover tabIndex={-1} key={`${row.username}-${row.created_at}`}>
-                    {columns.map((column) => {
-                      if (column.id === 'action') {
-                        return (
-                          <TableCell key={column.id} align={column.align}>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleUpdateStatus(row.username, row.status)}
-                            >
-                              Cập nhật trạng thái
-                            </Button>
-                          </TableCell>
-                        );
-                      }
-                      const value = row[column.id as keyof WithdrawHistoryFormData];
+              {data?.docs?.map((row) => (
+                <TableRow hover tabIndex={-1} key={row.code}>
+                  {columns.map((column) => {
+                    if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          {column.format && typeof value === 'number' ? column.format(value) : value}
+                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
+                            Cập nhật trạng thái
+                          </Button>
                         </TableCell>
                       );
-                    })}
-                  </TableRow>
-                ))}
+                    }
+                    let value = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'userID') {
+                      value = row.userID || 'N/A';
+                    } else if (column.id === 'adminID') {
+                      value = row.adminID || 'N/A';
+                    } else if (column.id === 'bank') {
+                      value = row.bank.bankName || 'N/A';
+                    } else if (column.id === 'status') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={
+                              row.status === WithdrawStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === WithdrawStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                          >
+                            {statusLabels[row.status as WithdrawStatusEnum] || row.status}
+                          </Typography>
+                        </TableCell>
+                      );
+                    } else if (column.id === 'createdAt') {
+                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      });
+                    }
+                    return (
+                      <TableCell key={column.id} align={column.align}>
+                        {column.format && typeof value === 'number' ? column.format(value) : value}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredData.length}
+          count={data?.totalDocs}
           rowsPerPage={rowsPerPage}
-          page={page[getStatus(tabValue)]}
+          page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <UpdateWithdrawStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
     </Box>
   );
 };

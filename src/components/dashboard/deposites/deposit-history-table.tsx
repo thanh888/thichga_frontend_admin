@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { paginate } from '@/services/dashboard/deposit-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
+import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import {
   Box,
   Button,
@@ -17,6 +19,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+
+import UpdateDepositStatusComponent from './update-deposit-status';
 
 // Assumed API for deposit history
 
@@ -50,7 +54,7 @@ const columns: Column[] = [
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 120, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
@@ -71,11 +75,19 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     totalDocs: 0,
   });
 
+  const [openDialog, setOpenDialog] = React.useState<any>(null);
+
+  const statusLabels: { [key in DepositStatusEnum]: string } = {
+    [DepositStatusEnum.PENDING]: 'Chờ xử lý',
+    [DepositStatusEnum.SUCCESS]: 'Thành công',
+    [DepositStatusEnum.REJECT]: 'Đã từ chối',
+  };
+
   // Fetch data using API
   const fetchDeposits = async () => {
     try {
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
       const response = await paginate(query);
       if (response.status === 200 || response.status === 201) {
         // Transform userID and adminID to usernames
@@ -95,6 +107,10 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       console.error('Failed to fetch deposit history:', error);
       setData({ docs: [], totalDocs: 0 });
     }
+  };
+
+  const handleOpenDialog = (data: any) => {
+    setOpenDialog(data);
   };
 
   React.useEffect(() => {
@@ -119,13 +135,6 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     const isAsc = sortField === field && sortOrder === 'asc';
     setSortField(field);
     setSortOrder(isAsc ? 'desc' : 'asc');
-  };
-
-  // Hàm xử lý khi nhấp nút "Xem chi tiết"
-  const handleViewDetail = (code: string) => {
-    // Placeholder for navigation or modal
-    alert(`Xem chi tiết cho mã: ${code}`);
-    setIsReload(true); // Trigger refresh after action
   };
 
   // Hàm xử lý thay đổi trang
@@ -185,14 +194,14 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.docs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
+              {data?.docs?.map((row) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleViewDetail(row.code)}>
-                            Xem chi tiết
+                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
+                            Cập nhật trạng thái
                           </Button>
                         </TableCell>
                       );
@@ -207,10 +216,16 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         <TableCell key={column.id} align={column.align}>
                           <Typography
                             variant="caption"
-                            bgcolor={row.status === 'Won' ? '#1de9b6' : row.status === 'Lost' ? '#e57373' : '#bdbdbd'}
+                            bgcolor={
+                              row.status === DepositStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === DepositStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {row.status}
+                            {statusLabels[row.status as DepositStatusEnum] || row.status}
                           </Typography>
                         </TableCell>
                       );
@@ -245,6 +260,8 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <UpdateDepositStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
     </Box>
   );
 };

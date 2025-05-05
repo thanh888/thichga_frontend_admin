@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import { GetSettingApi } from '@/services/dashboard/setting.api';
+import { SettingInterface } from '@/utils/interfaces/setting.interface';
 
 import { logger } from '@/lib/default-logger';
 
 export interface SettingContextValue {
-  setting: any;
+  setting: SettingInterface;
   error: string | null;
   isLoading: boolean;
   checkSettingSession?: () => Promise<void>;

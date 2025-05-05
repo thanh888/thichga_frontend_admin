@@ -6,6 +6,8 @@ import { SupportContactInterface } from './support.interface';
 // Interface for the Setting document
 export interface SettingInterface {
   // Brief introduction or description
+  _id: string;
+
   introduce?: string;
 
   // Array of banner image URLs or identifiers

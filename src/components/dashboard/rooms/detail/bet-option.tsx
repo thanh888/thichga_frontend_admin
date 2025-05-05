@@ -78,7 +78,7 @@ export function BetOptionComponent(): React.JSX.Element {
 
   const fetchBets = async () => {
     try {
-      const query = `limit=1000&isCurrent=true`; // Fetch all bets, assuming high limit
+      const query = `limit=5&isCurrent=true`; // Fetch all bets, assuming high limit
       const response = await paginateBetHistoryApi(sessionGameId, query);
       if (response.status === 200 || response.status === 201) {
         // Transform creatorID and matchedUserId to usernames (if needed)

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { UpdateSettingApi } from '@/services/dashboard/setting.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
@@ -10,11 +9,6 @@ import { toast } from 'react-toastify';
 import { SettingContext } from '@/contexts/setting-context';
 
 export default function DepositModePage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
-
-  const navigate = useRouter();
-
   const settingContext = React.useContext(SettingContext);
   const setting = settingContext?.setting;
 
@@ -24,7 +18,10 @@ export default function DepositModePage() {
 
   const handleUpdateDepositMode = async () => {
     try {
-      const reponse = await UpdateSettingApi(setting?._id, { deposit_mode: selectMode });
+      if (!setting?._id) {
+        throw new Error('Setting ID is undefined');
+      }
+      const reponse = await UpdateSettingApi(setting._id, { deposit_mode: selectMode });
       if (reponse.status === 200 || reponse.status === 201) {
         if (typeof checkSettingSession === 'function') {
           await checkSettingSession();
@@ -33,6 +30,7 @@ export default function DepositModePage() {
       }
     } catch (error) {
       toast.error('Cập nhật thất bại');
+      console.log(error);
     }
   };
   const handleOnChange = (event: any) => {
@@ -50,7 +48,12 @@ export default function DepositModePage() {
             <InputLabel shrink sx={{ fontSize: 20 }}>
               Chọn chế độ
             </InputLabel>
-            <Select label="Chọn chế độ" name="deposit_mode" onChange={handleOnChange}>
+            <Select
+              label="Chọn chế độ"
+              name="deposit_mode"
+              onChange={handleOnChange}
+              value={selectMode ?? setting?.deposit_mode}
+            >
               <MenuItem value={DepositModeEnum.AUTO}>Tự động</MenuItem>
               <MenuItem value={DepositModeEnum.MANUAL}>Thủ công</MenuItem>
             </Select>

@@ -1,6 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { paginate } from '@/services/dashboard/deposit-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
+import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import {
   Box,
   Button,
@@ -17,19 +20,22 @@ import {
   Typography,
 } from '@mui/material';
 
+import UpdateDepositStatusComponent from '@/components/dashboard/deposites/update-deposit-status';
+
 // Định nghĩa interface cho dữ liệu bảng
-interface BetHistoryFormData {
-  code: string;
-  username: string;
+interface AutoDepositFormData {
+  userID: any;
   money: number;
-  created_at: string;
+  adminID: any;
   status: string;
-  admin_accept: string;
+  code: string;
+  createdAt: string;
+  transactionCode: string;
 }
 
 // Định nghĩa interface cho cột bảng
 interface Column {
-  id: keyof BetHistoryFormData | 'action';
+  id: keyof AutoDepositFormData | 'action';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
@@ -37,8 +43,8 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã cược', minWidth: 100, align: 'left' },
-  { id: 'username', label: 'Tên người dùng', minWidth: 120, align: 'left' },
+  { id: 'code', label: 'Mã tra cứu', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người dùng', minWidth: 120, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -46,82 +52,96 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 120, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 120, align: 'left' },
+  { id: 'transactionCode', label: 'Mã giao dịch ngân hàng', minWidth: 120, align: 'left' },
+  // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(
-  code: string,
-  username: string,
-  money: number,
-  created_at: string,
-  status: string,
-  admin_accept: string
-): BetHistoryFormData {
-  return { code, username, money, created_at, status, admin_accept };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: BetHistoryFormData[] = [
-  createData('BET001', 'user1', 500, '2025-04-23 10:00', 'Pending', 'Waiting'),
-  createData('BET002', 'user2', 1000, '2025-04-23 11:00', 'Won', 'Accepted'),
-  createData('BET003', 'user3', 200, '2025-04-23 12:00', 'Lost', 'Rejected'),
-  createData('BET004', 'user4', 0, '2025-04-23 13:00', 'Pending', 'Waiting'),
-  createData('BET005', 'user5', 750, '2025-04-23 14:00', 'Won', 'Accepted'),
-  createData('BET006', 'user6', 300, '2025-04-23 15:00', 'Lost', 'Rejected'),
-];
-
-const AutoDepositHistoryPage: React.FC = () => {
+const AutoDepositHistoryPage: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof BetHistoryFormData | ''>('');
+  const [sortField, setSortField] = React.useState<keyof AutoDepositFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<BetHistoryFormData[]>(initialData);
+  const [data, setData] = React.useState<{ docs: AutoDepositFormData[]; totalDocs: number }>({
+    docs: [],
+    totalDocs: 0,
+  });
+  const [openDialog, setOpenDialog] = React.useState<any>(null);
 
-  // Hàm xử lý tìm kiếm
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value.toLowerCase();
-    setSearchTerm(value);
-    setPage(0); // Reset về trang 1 khi tìm kiếm
-    const filtered = initialData.filter(
-      (row) =>
-        row.code.toLowerCase().includes(value) ||
-        row.username.toLowerCase().includes(value) ||
-        row.status.toLowerCase().includes(value)
-    );
-    setFilteredData(filtered);
+  const statusLabels: { [key in DepositStatusEnum]: string } = {
+    [DepositStatusEnum.PENDING]: 'Chờ xử lý',
+    [DepositStatusEnum.SUCCESS]: 'Thành công',
+    [DepositStatusEnum.REJECT]: 'Đã từ chối',
   };
 
-  // Hàm xử lý sắp xếp
-  const handleSort = (field: keyof BetHistoryFormData) => {
-    const isAsc = sortField === field && sortOrder === 'asc';
-    const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
-    setSortField(field);
-    setSortOrder(newOrder);
-
-    const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'money') {
-        return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
+  // Fetch data using API
+  const fetchDeposits = async () => {
+    try {
+      const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.AUTO}`;
+      const response = await paginate(query);
+      if (response.status === 200 || response.status === 201) {
+        const transformedData = {
+          ...response.data,
+          docs: response.data.docs.map((item: any) => ({
+            ...item,
+            userID: item.userID?.username || 'N/A',
+            adminID: item.adminID?.username || 'N/A',
+          })),
+        };
+        setData(transformedData);
+      } else {
+        setData({ docs: [], totalDocs: 0 });
       }
-      return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
-    });
-    setFilteredData(sortedData);
+    } catch (error) {
+      console.error('Failed to fetch deposit history:', error);
+      setData({ docs: [], totalDocs: 0 });
+    }
   };
 
-  // Hàm xử lý khi nhấp nút "Xem chi tiết"
-  const handleViewDetail = (code: string) => {
-    // Thay bằng logic thực tế (ví dụ: mở modal, chuyển hướng)
-    alert(`Xem chi tiết cho mã: ${code}`);
+  React.useEffect(() => {
+    if (isReload) {
+      fetchDeposits();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    fetchDeposits();
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder]);
+
+  // Handle search
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
   };
 
-  // Hàm xử lý thay đổi trang
+  // Handle sorting
+  const handleSort = (field: keyof AutoDepositFormData) => {
+    const isAsc = sortField === field && sortOrder === 'asc';
+    setSortField(field);
+    setSortOrder(isAsc ? 'desc' : 'asc');
+  };
+
+  // Handle open dialog for status update
+  const handleOpenDialog = (row: AutoDepositFormData) => {
+    setOpenDialog(row);
+  };
+
+  // Handle page change
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(+event.target.value);
     setPage(0);
@@ -152,21 +172,72 @@ const AutoDepositHistoryPage: React.FC = () => {
           sx={{ mb: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
-          <Table stickyHeader aria-label="bet-history-table">
+          <Table stickyHeader aria-label="auto-deposit-history-table">
             <TableHead>
               <TableRow>
                 {columns.map((column) => (
                   <TableCell key={column.id} align={column.align} sx={{ minWidth: column.minWidth, top: 0 }}>
-                    {column.label}
+                    {column.id !== 'action' ? (
+                      <TableSortLabel
+                        active={sortField === column.id}
+                        direction={sortField === column.id ? sortOrder : 'asc'}
+                        onClick={() => handleSort(column.id as keyof AutoDepositFormData)}
+                      >
+                        {column.label}
+                      </TableSortLabel>
+                    ) : (
+                      column.label
+                    )}
                   </TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
+              {data?.docs?.map((row) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
-                    const value = row[column.id as keyof BetHistoryFormData];
+                    if (column.id === 'action') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
+                            Cập nhật trạng thái
+                          </Button>
+                        </TableCell>
+                      );
+                    }
+                    let value = row[column.id as keyof AutoDepositFormData];
+                    if (column.id === 'userID') {
+                      value = row.userID || 'N/A';
+                    } else if (column.id === 'adminID') {
+                      value = row.adminID || 'N/A';
+                    } else if (column.id === 'status') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={
+                              row.status === DepositStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === DepositStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                          >
+                            {statusLabels[row.status as DepositStatusEnum] || row.status}
+                          </Typography>
+                        </TableCell>
+                      );
+                    } else if (column.id === 'createdAt') {
+                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      });
+                    }
                     return (
                       <TableCell key={column.id} align={column.align}>
                         {column.format && typeof value === 'number' ? column.format(value) : value}
@@ -181,13 +252,15 @@ const AutoDepositHistoryPage: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredData.length}
+          count={data.totalDocs}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <UpdateDepositStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
     </Box>
   );
 };

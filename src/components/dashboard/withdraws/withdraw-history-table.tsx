@@ -1,10 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { WidthdrawPaginate, WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import {
   Box,
   Button,
   Paper,
+  Tab,
   Table,
   TableBody,
   TableCell,
@@ -13,19 +16,23 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
 
+import UpdateWithdrawStatusComponent from './update-withdraw-status';
+
 // Định nghĩa interface cho dữ liệu bảng
 interface WithdrawHistoryFormData {
-  username: string;
-  bank: string;
+  bank: any;
+  feedback: string;
+  userID: any;
   money: number;
-  note: string;
-  created_at: string;
+  adminID: any;
   status: string;
-  admin_accept: string;
+  code: string;
+  createdAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -38,8 +45,9 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'username', label: 'Tên người dùng', minWidth: 100, align: 'left' },
-  { id: 'bank', label: 'Ngân hàng', minWidth: 120, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
+  { id: 'bank', label: 'Ngân hàng', minWidth: 150, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -47,88 +55,99 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'note', label: 'Ghi chú', minWidth: 150, align: 'left' },
-  { id: 'created_at', label: 'Ngày tạo', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 100, align: 'left' },
-  { id: 'admin_accept', label: 'Quản trị chấp nhận', minWidth: 120, align: 'left' },
+  { id: 'feedback', label: 'Ghi chú', minWidth: 150, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(
-  username: string,
-  bank: string,
-  money: number,
-  note: string,
-  created_at: string,
-  status: string,
-  admin_accept: string
-): WithdrawHistoryFormData {
-  return { username, bank, money, note, created_at, status, admin_accept };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: WithdrawHistoryFormData[] = [
-  createData('user1', 'Vietcombank', 500, 'Rút tiền lần 1', '2025-04-23 10:00', 'Pending', 'Waiting'),
-  createData('user2', 'Techcombank', 1000, 'Rút thưởng', '2025-04-23 11:00', 'Won', 'Accepted'),
-  createData('user3', 'MB Bank', 200, 'Rút tiền', '2025-04-23 12:00', 'Lost', 'Rejected'),
-  createData('user4', 'VPBank', 0, 'Kiểm tra rút', '2025-04-23 13:00', 'Pending', 'Waiting'),
-  createData('user5', 'Sacombank', 750, 'Rút tiền lần 2', '2025-04-23 14:00', 'Won', 'Accepted'),
-  createData('user6', 'ACB', 300, 'Rút tiền', '2025-04-23 15:00', 'Lost', 'Rejected'),
-];
-
-const WithdrawHistoryTable: React.FC = () => {
+const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData | ''>('');
+  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [filteredData, setFilteredData] = React.useState<WithdrawHistoryFormData[]>(initialData);
+  const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
+    docs: [],
+    totalDocs: 0,
+  });
+  const [openDialog, setOpenDialog] = React.useState<any>(null);
 
-  // Hàm xử lý tìm kiếm
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value.toLowerCase();
-    setSearchTerm(value);
-    setPage(0); // Reset về trang 1 khi tìm kiếm
-    const filtered = initialData.filter(
-      (row) =>
-        row.username.toLowerCase().includes(value) ||
-        row.bank.toLowerCase().includes(value) ||
-        row.note.toLowerCase().includes(value) ||
-        row.status.toLowerCase().includes(value)
-    );
-    setFilteredData(filtered);
+  const statusLabels: { [key in WithdrawStatusEnum]: string } = {
+    [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+    [WithdrawStatusEnum.SUCCESS]: 'Thành công',
+    [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
   };
 
-  // Hàm xử lý sắp xếp
+  // Fetch data using API
+  const fetchWithdraws = async () => {
+    try {
+      const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
+      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}`;
+      const response = await WidthdrawPaginate(query);
+      if (response.status === 200 || response.status === 201) {
+        const transformedData = {
+          ...response.data,
+          docs: response.data.docs.map((item: any) => ({
+            ...item,
+            userID: item.userID?.username ?? 'N/A',
+            adminID: item.adminID?.username ?? 'N/A',
+            bank: item.bank?.bankName ?? 'N/A',
+          })),
+        };
+        setData(transformedData);
+      } else {
+        setData({ docs: [], totalDocs: 0 });
+      }
+    } catch (error) {
+      console.error('Failed to fetch withdraw history:', error);
+      setData({ docs: [], totalDocs: 0 });
+    }
+  };
+
+  React.useEffect(() => {
+    if (isReload) {
+      fetchWithdraws();
+      setIsReload(false);
+    }
+  }, [isReload]);
+
+  React.useEffect(() => {
+    fetchWithdraws();
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder]);
+
+  // Handle search
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Handle sorting
   const handleSort = (field: keyof WithdrawHistoryFormData) => {
     const isAsc = sortField === field && sortOrder === 'asc';
-    const newOrder: 'asc' | 'desc' = isAsc ? 'desc' : 'asc';
     setSortField(field);
-    setSortOrder(newOrder);
-
-    const sortedData = [...filteredData].sort((a, b) => {
-      if (field === 'money') {
-        return newOrder === 'asc' ? a[field] - b[field] : b[field] - a[field];
-      }
-      return newOrder === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
-    });
-    setFilteredData(sortedData);
+    setSortOrder(isAsc ? 'desc' : 'asc');
   };
 
-  // Hàm xử lý khi nhấp nút "Cập nhật trạng thái"
-  const handleUpdateStatus = (username: string, currentStatus: string) => {
-    // Thay bằng logic thực tế (ví dụ: gọi API để cập nhật trạng thái)
-    alert(`Cập nhật trạng thái cho người dùng: ${username} từ ${currentStatus}`);
+  // Open dialog for status update
+  const handleOpenDialog = (data: any) => {
+    setOpenDialog(data);
   };
 
-  // Hàm xử lý thay đổi trang
-  const handleChangePage = (event: unknown, newPage: number) => {
+  // Handle page change
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
@@ -147,6 +166,7 @@ const WithdrawHistoryTable: React.FC = () => {
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
           Danh sách tất cả yêu cầu rút tiền
         </Typography>
+
         <TextField
           label="Tìm kiếm"
           variant="outlined"
@@ -178,23 +198,53 @@ const WithdrawHistoryTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-                <TableRow hover tabIndex={-1} key={`${row.username}-${row.created_at}`}>
+              {data?.docs?.map((row) => (
+                <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleUpdateStatus(row.username, row.status)}
-                          >
+                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
                             Cập nhật trạng thái
                           </Button>
                         </TableCell>
                       );
                     }
-                    const value = row[column.id as keyof WithdrawHistoryFormData];
+                    let value = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'userID') {
+                      value = row.userID || 'N/A';
+                    } else if (column.id === 'adminID') {
+                      value = row.adminID || 'N/A';
+                    } else if (column.id === 'bank') {
+                      value = row.bank || 'N/A';
+                    } else if (column.id === 'status') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={
+                              row.status === WithdrawStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === WithdrawStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                          >
+                            {statusLabels[row.status as WithdrawStatusEnum] || row.status}
+                          </Typography>
+                        </TableCell>
+                      );
+                    } else if (column.id === 'createdAt') {
+                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      });
+                    }
                     return (
                       <TableCell key={column.id} align={column.align}>
                         {column.format && typeof value === 'number' ? column.format(value) : value}
@@ -209,13 +259,15 @@ const WithdrawHistoryTable: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredData.length}
+          count={data?.totalDocs}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <UpdateWithdrawStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
     </Box>
   );
 };

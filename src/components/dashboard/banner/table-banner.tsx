@@ -1,19 +1,28 @@
 'use client';
 
 import * as React from 'react';
+import { DeleteBannerSettingApi } from '@/services/dashboard/setting.api';
+// Assumed API for deleting banners
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
+
+import { SettingContext } from '@/contexts/setting-context';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface BannerFormData {
@@ -33,39 +42,55 @@ const columns: Column[] = [
   { id: 'action', label: 'Action', minWidth: 120, align: 'center' },
 ];
 
-// Hàm tạo dữ liệu mẫu
-function createData(image_url: string): BannerFormData {
-  return { image_url };
+interface Props {
+  isReload: boolean;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const initialData: BannerFormData[] = [
-  createData('https://example.com/images/banner1.jpg'),
-  createData('https://example.com/images/banner2.jpg'),
-  createData('https://example.com/images/banner3.jpg'),
-  createData('https://example.com/images/banner4.jpg'),
-  createData('https://example.com/images/banner5.jpg'),
-  createData('https://example.com/images/banner6.jpg'),
-];
-
 const BannerTable: React.FC = () => {
-  const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const settingContext = React.useContext(SettingContext);
+  const setting = settingContext?.setting;
+  const checkSettingSession = settingContext?.checkSettingSession;
 
-  // Hàm xử lý khi nhấp nút "Xem chi tiết"
-  const handleViewDetail = (image_url: string) => {
-    // Thay bằng logic thực tế (ví dụ: mở modal, chuyển hướng)
-    alert(`View details for image: ${image_url}`);
+  const [openDialog, setOpenDialog] = React.useState<boolean>(false);
+  const [selectedBanner, setSelectedBanner] = React.useState<string | null>(null);
+
+  // Open confirmation dialog
+  const handleOpenDialog = (image_url: string) => {
+    setSelectedBanner(image_url);
+    setOpenDialog(true);
   };
 
-  // Hàm xử lý thay đổi trang
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
+  // Close dialog
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedBanner(null);
   };
 
-  // Hàm xử lý thay đổi số lượng bản ghi mỗi trang
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
+  // Handle banner deletion
+  const handleDeleteBanner = async () => {
+    if (!selectedBanner) return;
+
+    try {
+      if (!setting?._id) {
+        throw new Error('Setting ID is undefined');
+      }
+      const response = await DeleteBannerSettingApi(setting._id, selectedBanner);
+
+      if (response.status === 200 || response.status === 201) {
+        if (typeof checkSettingSession === 'function') {
+          await checkSettingSession();
+        }
+        toast.success('Xóa banner thành công');
+      } else {
+        toast.error('Xóa banner thất bại');
+      }
+    } catch (error) {
+      console.error('Error deleting banner:', error);
+      toast.error('Lỗi khi xóa banner. Vui lòng thử lại sau.');
+    } finally {
+      handleCloseDialog();
+    }
   };
 
   return (
@@ -95,22 +120,27 @@ const BannerTable: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {initialData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
-                <TableRow hover tabIndex={-1} key={index}>
+              {setting?.banner?.map((row, index) => (
+                <TableRow hover tabIndex={-1} key={+index}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleViewDetail(row.image_url)}>
+                          <Button variant="outlined" size="small" color="error" onClick={() => handleOpenDialog(row)}>
                             Delete
                           </Button>
                         </TableCell>
                       );
                     }
-                    const value = row[column.id as keyof BannerFormData];
                     return (
                       <TableCell key={column.id} align={column.align}>
-                        <img src={value} />
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <img
+                            src={'http://localhost:5000/' + row}
+                            alt="Banner"
+                            style={{ maxWidth: '100px', maxHeight: '50px', marginRight: '8px' }}
+                          />
+                        </Box>
                       </TableCell>
                     );
                   })}
@@ -119,16 +149,30 @@ const BannerTable: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={initialData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </Paper>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Xác nhận xóa banner</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Bạn có chắc chắn muốn xóa banner này không?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleDeleteBanner} color="error" autoFocus>
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

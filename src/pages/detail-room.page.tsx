@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { getOneBetroomId } from '@/services/dashboard/bet-room.api';
-import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 
 import BetHistoryComponent from '@/components/dashboard/rooms/detail/bet-history';
 import BetOptionComponent from '@/components/dashboard/rooms/detail/bet-option';
@@ -33,7 +32,7 @@ interface RoomeFormData {
 }
 export default function DetailRoom() {
   const params = useParams<{ id: string }>();
-  const id = params?.id || '';
+  const id = params?.id ?? '';
 
   const [formData, setFormData] = React.useState<RoomeFormData | null>(null);
 
@@ -54,19 +53,19 @@ export default function DetailRoom() {
     if (id) {
       fetchRoomData(id).then((data) => {
         setFormData({
-          roomName: data.roomName || '',
+          roomName: data.roomName ?? '',
           thumbnail: data.thumbnail ?? '',
-          urlLive: data.urlLive || '',
-          urlType: data.urlType || '',
-          secondsEnding: data.secondsEnding || '',
-          fee: data.fee || '',
-          marquee: data.marquee || '',
-          chattingJframe: data.chattingJframe || '',
-          redName: data.redName || '',
-          blueName: data.blueName || '',
-          leftText: data.leftText || '',
-          centerText: data.centerText || '',
-          rightText: data.rightText || '',
+          urlLive: data.urlLive ?? '',
+          urlType: data.urlType ?? '',
+          secondsEnding: data.secondsEnding ?? '',
+          fee: data.fee ?? '',
+          marquee: data.marquee ?? '',
+          chattingJframe: data.chattingJframe ?? '',
+          redName: data.redName ?? '',
+          blueName: data.blueName ?? '',
+          leftText: data.leftText ?? '',
+          centerText: data.centerText ?? '',
+          rightText: data.rightText ?? '',
           isOpened: data.isOpened ?? false,
           isAcceptBetting: data.isAcceptBetting ?? false,
           redOdds: data.redOdds ?? 10,

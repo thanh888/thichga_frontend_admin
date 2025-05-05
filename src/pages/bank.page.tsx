@@ -1,71 +1,138 @@
 'use client';
 
 import * as React from 'react';
-import { Box, Button, FormControl, Grid, InputLabel, OutlinedInput, Paper, TextField, Typography } from '@mui/material';
+import { uploadImageApi } from '@/services/dashboard/bet-room.api';
+import { UpdateSettingApi } from '@/services/dashboard/setting.api';
+import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
+import { BankInteface } from '@/utils/interfaces/bank.interface';
+import {
+  Box,
+  Button,
+  FormControl,
+  Grid,
+  InputLabel,
+  OutlinedInput,
+  Paper,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
+import { toast } from 'react-toastify';
 
-interface BankAccountFormData {
-  bank_name: string;
-  number_account: string;
-  name_account: string;
-  image_qr: File | null;
-  branch: string;
-  content: string;
-}
+import { SettingContext } from '@/contexts/setting-context';
 
 export default function BankPageBankPage() {
-  const [formData, setFormData] = React.useState<BankAccountFormData>({
-    bank_name: '',
-    number_account: '',
-    name_account: '',
-    image_qr: null,
+  const settingContext = React.useContext(SettingContext);
+  const setting = settingContext?.setting;
+
+  const checkSettingSession = React.useContext(SettingContext)?.checkSettingSession;
+
+  const [formData, setFormData] = React.useState<BankInteface>({
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
+    imageQR: '',
     branch: '',
-    content: '',
   });
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [file, setFile] = React.useState<string>('');
+
+  const [formError, setFormError] = React.useState<any>({});
 
   const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>
+    event:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>
+      | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
-    if (name) {
+    if (name && formData) {
       setFormData((prev) => ({
-        ...prev,
+        ...prev!,
         [name]: value,
       }));
+      if (!value && ['bankName', 'accountNumber', 'accountName', 'branch', 'transferContents'].includes(name)) {
+        setFieldError(setFormError, name, true);
+      } else {
+        setFieldError(setFormError, name, false);
+      }
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
-    setFormData((prev) => ({
-      ...prev,
-      image_qr: file,
-    }));
     if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+      try {
+        const uploadImage = await uploadImageApi(file);
+        if (uploadImage.status === 201) {
+          setFormData((prev: any) => ({
+            ...prev,
+            imageQR: uploadImage.data.path,
+          }));
+          toast.success('Upload ảnh thành công');
+          const previewUrl = URL.createObjectURL(file);
+          setImagePreview(previewUrl);
+          setFile(file.name);
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error('Upload ảnh thất bại. Vui lòng thử lại sau.');
+      }
     } else {
       setImagePreview(null);
+      setFile('');
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Thay bằng logic thực tế (ví dụ: gửi formData lên API)
-    console.log('Form submitted:', formData);
-    // Reset form sau khi submit
-    setFormData({
-      bank_name: '',
-      number_account: '',
-      name_account: '',
-      image_qr: null,
-      branch: '',
-      content: '',
-    });
-    setImagePreview(null);
+
+    const requiredFields = {
+      bankName: formData.bankName,
+      accountNumber: formData.accountNumber,
+      accountName: formData.accountName,
+      branch: formData.branch,
+    };
+    const isNotNull = CheckFormDataNull(requiredFields, setFormError);
+
+    if (!isNotNull) {
+      toast.error('Hãy điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    try {
+      if (!setting?._id) {
+        throw new Error('Setting ID is undefined');
+      }
+      const response = await UpdateSettingApi(setting._id, { bank: formData });
+
+      if (response.status === 200 || response.status === 201) {
+        if (typeof checkSettingSession === 'function') {
+          await checkSettingSession();
+        }
+        toast.success('Cập nhật thành công');
+
+        setFile('');
+      } else {
+        console.error('Failed to save bank account:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
   };
 
-  // Dọn dẹp URL preview khi component unmount hoặc khi reset form
+  React.useEffect(() => {
+    setFormData({
+      accountName: setting?.bank?.accountName ?? '',
+      bankName: setting?.bank?.bankName ?? '',
+      accountNumber: setting?.bank?.accountNumber ?? '',
+      branch: setting?.bank?.branch ?? '',
+      imageQR: setting?.bank?.imageQR ?? '',
+      transferContent: setting?.bank?.transferContent ?? '',
+    });
+    if (setting?.bank?.imageQR) {
+      setImagePreview('http://localhost:5000/' + setting?.bank?.imageQR);
+    }
+  }, [setting]);
+
   React.useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -97,9 +164,10 @@ export default function BankPageBankPage() {
                     <InputLabel>Tên ngân hàng</InputLabel>
                     <OutlinedInput
                       label="Tên ngân hàng"
-                      name="bank_name"
-                      value={formData.bank_name}
+                      name="bankName"
+                      value={formData.bankName ?? setting?.bank?.bankName}
                       onChange={handleChange}
+                      error={formError?.bankName ?? false}
                     />
                   </FormControl>
                 </Grid>
@@ -108,9 +176,10 @@ export default function BankPageBankPage() {
                     <InputLabel>Số tài khoản</InputLabel>
                     <OutlinedInput
                       label="Số tài khoản"
-                      name="number_account"
-                      value={formData.number_account}
+                      name="accountNumber"
+                      value={formData.accountNumber ?? setting?.bank?.accountNumber}
                       onChange={handleChange}
+                      error={formError?.accountNumber ?? false}
                     />
                   </FormControl>
                 </Grid>
@@ -119,9 +188,10 @@ export default function BankPageBankPage() {
                     <InputLabel>Tên chủ tài khoản</InputLabel>
                     <OutlinedInput
                       label="Tên chủ tài khoản"
-                      name="name_account"
-                      value={formData.name_account}
+                      name="accountName"
+                      value={formData.accountName ?? setting?.bank?.accountName}
                       onChange={handleChange}
+                      error={formError?.accountName ?? false}
                     />
                   </FormControl>
                 </Grid>
@@ -129,11 +199,11 @@ export default function BankPageBankPage() {
                   <FormControl fullWidth>
                     <Button variant="contained" component="label">
                       Tải lên mã QR
-                      <input type="file" accept="image/*" hidden name="image_qr" onChange={handleFileChange} />
+                      <input type="file" accept="image/*" hidden name="imageQR" onChange={handleFileChange} />
                     </Button>
-                    {formData.image_qr && (
+                    {file && (
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        Đã chọn: {formData.image_qr.name}
+                        Đã chọn: {file}
                       </Typography>
                     )}
                   </FormControl>
@@ -141,19 +211,24 @@ export default function BankPageBankPage() {
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
                     <InputLabel>Chi nhánh</InputLabel>
-                    <OutlinedInput label="Chi nhánh" name="branch" value={formData.branch} onChange={handleChange} />
+                    <OutlinedInput
+                      label="Chi nhánh"
+                      name="branch"
+                      value={formData.branch}
+                      error={formError?.branch ?? false}
+                      onChange={handleChange}
+                    />
                   </FormControl>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={12}>
                   <FormControl fullWidth>
-                    <TextField
-                      label="Nội dung"
-                      name="content"
-                      value={formData.content}
+                    <InputLabel>Nội dung chuyển tiền</InputLabel>
+                    <OutlinedInput
+                      label="Nội dung chuyển tiền"
+                      name="transferContent"
+                      value={formData.transferContent}
                       onChange={handleChange}
-                      multiline
-                      rows={4}
-                      variant="outlined"
+                      error={formError?.transferContent ?? false}
                     />
                   </FormControl>
                 </Grid>
@@ -174,7 +249,7 @@ export default function BankPageBankPage() {
               >
                 {imagePreview ? (
                   <img
-                    src={imagePreview}
+                    src={imagePreview ?? `http://localhost:5000/${setting?.bank?.imageQR}`}
                     alt="QR Preview"
                     style={{
                       maxWidth: '100%',
@@ -193,7 +268,7 @@ export default function BankPageBankPage() {
           </Grid>
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
             <Button type="submit" variant="contained" size="large">
-              Thêm tài khoản
+              Cập nhật
             </Button>
           </Box>
         </Box>

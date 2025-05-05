@@ -301,6 +301,7 @@ export default function EditRoom({ data }: Readonly<Props>) {
     const videoId = match && match[2].length === 11 ? match[2] : null;
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
   };
+
   return (
     <Box sx={{ width: '100%', pt: 1, pb: 4, px: 4, borderRadius: 2, boxShadow: 3 }}>
       <Typography variant="h4" gutterBottom>
@@ -328,8 +329,8 @@ export default function EditRoom({ data }: Readonly<Props>) {
               error={formError?.urlType ?? false}
             >
               <MenuItem value="">Chọn loại</MenuItem>
-              <MenuItem value={UrlTypeEnum.M3U8}>M3U8</MenuItem>
-              <MenuItem value={UrlTypeEnum.IFRAME}>IFRAME</MenuItem>
+              <MenuItem value={'M3U8'}>M3U8</MenuItem>
+              <MenuItem value={'IFRAME'}>IFRAME</MenuItem>
             </Select>
           </FormControl>
         </Grid>
