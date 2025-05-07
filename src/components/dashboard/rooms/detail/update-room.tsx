@@ -42,7 +42,7 @@ interface RoomeFormData {
   leftText: string;
   centerText: string;
   rightText: string;
-  isOpened?: boolean | true;
+  isOpened?: boolean;
   isAcceptBetting?: boolean;
 }
 
@@ -232,6 +232,21 @@ export default function EditRoom({ data }: Readonly<Props>) {
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         toast.success(`Đã ${formData.isOpened ? 'đóng' : 'mở'} phiên`);
+      } else {
+        toast.error('Cập nhật trạng thái phiên thất bại');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    }
+  };
+
+  const handleCloseSession = async () => {
+    try {
+      const response = await OpenSession(id, { isOpened: false });
+      if (response.status === 200 || response.status === 201) {
+        setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
+        toast.success(`Đã đóng phiên`);
       } else {
         toast.error('Cập nhật trạng thái phiên thất bại');
       }
@@ -476,25 +491,24 @@ export default function EditRoom({ data }: Readonly<Props>) {
               justifyContent: 'center',
             }}
           >
-            {!formData?.isAcceptBetting && (
-              <Button
-                onClick={handleToggleSession}
-                variant="contained"
-                sx={{ width: '100%' }}
-                color={formData?.isOpened ? 'error' : 'success'}
-              >
-                {formData?.isOpened ? 'Đóng phiên' : 'Mở phiên'}
+            {!formData?.isOpened ? (
+              <Button onClick={handleToggleSession} variant="contained" sx={{ width: '100%' }} color={'success'}>
+                {'Mở phiên'}
               </Button>
-            )}
-            {formData?.isOpened && (
-              <Button
-                onClick={handleToggleBetting}
-                variant="outlined"
-                sx={{ width: '100%' }}
-                color={formData?.isAcceptBetting ? 'error' : 'success'}
-              >
-                {formData?.isAcceptBetting ? 'Đóng cược' : 'Mở cược'}
+            ) : !formData.isAcceptBetting ? (
+              <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
+                {'Mở cược'}
               </Button>
+            ) : (
+              <>
+                <Button onClick={handleCloseSession} variant="contained" sx={{ width: '100%' }} color={'error'}>
+                  {'Đóng phiên'}
+                </Button>
+
+                <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'error'}>
+                  {'Đóng cược'}
+                </Button>
+              </>
             )}
           </Box>
         </Grid>

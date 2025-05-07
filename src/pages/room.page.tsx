@@ -10,44 +10,16 @@ import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 
 import { config } from '@/config';
-import CreateRoome from '@/components/dashboard/rooms/create-room.dialog';
+import CreateRoom from '@/components/dashboard/rooms/create-room.dialog';
 import { RoomFormData, RoomsTable } from '@/components/dashboard/rooms/room-table';
 
 export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
-
-const rooms: RoomFormData[] = [
-  {
-    id: '1',
-    name: 'Phòng A',
-    type_room: 'Thường',
-    status_session: 'Đang hoạt động',
-    status_bet: 'Đang mở cược',
-    created_at: '2025-04-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Phòng B',
-    type_room: 'VIP',
-    status_session: 'Đã kết thúc',
-    status_bet: 'Đã đóng cược',
-    created_at: '2025-04-02T12:45:00Z',
-  },
-  {
-    id: '3',
-    name: 'Phòng C',
-    type_room: 'Thường',
-    status_session: 'Đang hoạt động',
-    status_bet: 'Đã đóng cược',
-    created_at: '2025-04-03T09:15:00Z',
-  },
-];
 
 export default function RoomsPage(): React.JSX.Element {
   const page = 0;
   const rowsPerPage = 5;
   const [openCreate, setOpenCreate] = React.useState(false);
-
-  const paginatedCustomers = applyPagination(rooms, page, rowsPerPage);
+  const [isReload, setIsReload] = React.useState(false);
 
   return (
     <Stack spacing={3}>
@@ -73,8 +45,8 @@ export default function RoomsPage(): React.JSX.Element {
           </Button>
         </div>
       </Stack>
-      <RoomsTable count={paginatedCustomers.length} page={page} rows={paginatedCustomers} rowsPerPage={rowsPerPage} />
-      <CreateRoome openCreate={openCreate} setOpenCreate={setOpenCreate} />
+      <RoomsTable isReload={isReload} setIsReload={setIsReload} />
+      <CreateRoom openCreate={openCreate} setOpenCreate={setOpenCreate} setIsReload={setIsReload} />
     </Stack>
   );
 }

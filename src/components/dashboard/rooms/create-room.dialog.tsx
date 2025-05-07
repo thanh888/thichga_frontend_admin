@@ -38,7 +38,6 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 interface CreateRoomProps {
   openCreate: boolean;
   setOpenCreate: React.Dispatch<React.SetStateAction<boolean>>;
-  isReload: boolean;
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
