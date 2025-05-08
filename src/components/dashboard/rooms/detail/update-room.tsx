@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
+  CloseSession,
   EnableBetting,
   getOneBetroomId,
   OpenSession,
@@ -11,6 +12,7 @@ import {
 } from '@/services/dashboard/bet-room.api';
 import { UrlTypeEnum } from '@/utils/enum/url-type.enum';
 import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
+import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
@@ -27,6 +29,8 @@ import {
   Typography,
 } from '@mui/material';
 import { toast } from 'react-toastify';
+
+import { useSocket } from '@/hooks/socket';
 
 interface RoomeFormData {
   roomName: string;
@@ -71,38 +75,25 @@ const HiddenInput = styled('input')({
 });
 
 interface Props {
-  data: RoomeFormData | null;
+  data: BettingRoomInterface | null;
+  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function EditRoom({ data }: Readonly<Props>) {
+export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const params = useParams<{ id: string }>();
   const id = params?.id || '';
   const router = useRouter();
 
-  const [formData, setFormData] = React.useState<RoomeFormData | null>(null);
+  const [formData, setFormData] = React.useState<BettingRoomInterface>({});
 
   const [formError, setFormError] = React.useState<any>({});
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
 
+  const socket = useSocket();
+
   React.useEffect(() => {
-    setFormData({
-      roomName: data?.roomName || '',
-      thumbnail: data?.thumbnail ?? '',
-      urlLive: data?.urlLive ?? '',
-      urlType: data?.urlType ?? UrlTypeEnum.IFRAME,
-      secondsEnding: data?.secondsEnding ?? '',
-      fee: data?.fee ?? '',
-      marquee: data?.marquee ?? '',
-      chattingJframe: data?.chattingJframe ?? '',
-      redName: data?.redName ?? '',
-      blueName: data?.blueName ?? '',
-      leftText: data?.leftText ?? '',
-      centerText: data?.centerText ?? '',
-      rightText: data?.rightText ?? '',
-      isOpened: data?.isOpened ?? false,
-      isAcceptBetting: data?.isAcceptBetting ?? false,
-    });
+    setFormData(data || {});
     if (data?.thumbnail) {
       setImagePreview('http://localhost:5000/' + data?.thumbnail);
       setFileName(data?.thumbnail.split('/').pop() ?? '');
@@ -187,18 +178,18 @@ export default function EditRoom({ data }: Readonly<Props>) {
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('roomName', formData.roomName);
-      formDataToSend.append('urlLive', formData.urlLive);
-      formDataToSend.append('urlType', formData.urlType);
-      formDataToSend.append('secondsEnding', formData.secondsEnding);
-      formDataToSend.append('fee', formData.fee);
-      formDataToSend.append('marquee', formData.marquee);
-      formDataToSend.append('chattingJframe', formData.chattingJframe);
-      formDataToSend.append('redName', formData.redName);
-      formDataToSend.append('blueName', formData.blueName);
-      formDataToSend.append('leftText', formData.leftText);
-      formDataToSend.append('centerText', formData.centerText);
-      formDataToSend.append('rightText', formData.rightText);
+      formDataToSend.append('roomName', formData.roomName ?? '');
+      formDataToSend.append('urlLive', formData.urlLive ?? '');
+      formDataToSend.append('urlType', formData.urlType ?? '');
+      formDataToSend.append('secondsEnding', formData?.secondsEnding?.toString() ?? '');
+      formDataToSend.append('fee', formData?.fee?.toString() ?? '');
+      formDataToSend.append('marquee', formData.marquee ?? '');
+      formDataToSend.append('chattingJframe', formData.chattingJframe ?? '');
+      formDataToSend.append('redName', formData.redName ?? '');
+      formDataToSend.append('blueName', formData.blueName ?? '');
+      formDataToSend.append('leftText', formData.leftText ?? '');
+      formDataToSend.append('centerText', formData.centerText ?? '');
+      formDataToSend.append('rightText', formData.rightText ?? '');
       if (formData.thumbnail) {
         formDataToSend.append('thumbnail', formData.thumbnail);
       }
@@ -206,6 +197,7 @@ export default function EditRoom({ data }: Readonly<Props>) {
       const response = await UpdateBetRoomById(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật phòng thành công');
+        setIsReload(true);
       } else {
         toast.error('Cập nhật phòng thất bại');
       }
@@ -223,15 +215,14 @@ export default function EditRoom({ data }: Readonly<Props>) {
     router.push('/rooms');
   };
 
-  const handleToggleSession = async () => {
+  const handleOpenSession = async () => {
     if (!formData) return;
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('isOpened', String(!formData.isOpened));
-      const response = await OpenSession(id, formDataToSend);
+      const response = await OpenSession(id, { secondsEnding: data?.secondsEnding });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
-        toast.success(`Đã ${formData.isOpened ? 'đóng' : 'mở'} phiên`);
+        setIsReload(true);
+        toast.success(`Đã mở phiên`);
       } else {
         toast.error('Cập nhật trạng thái phiên thất bại');
       }
@@ -243,10 +234,18 @@ export default function EditRoom({ data }: Readonly<Props>) {
 
   const handleCloseSession = async () => {
     try {
-      const response = await OpenSession(id, { isOpened: false });
+      const response = await CloseSession(id, { latestSessionID: formData.latestSessionID });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
+        setIsReload(true);
         toast.success(`Đã đóng phiên`);
+        if (socket) {
+          socket.emit('update-room', {
+            roomID: id,
+            isOpended: false,
+          });
+          socket.off('update-room');
+        }
       } else {
         toast.error('Cập nhật trạng thái phiên thất bại');
       }
@@ -264,6 +263,7 @@ export default function EditRoom({ data }: Readonly<Props>) {
       const response = await EnableBetting(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
+        setIsReload(true);
         toast.success(`Đã ${formData.isAcceptBetting ? 'đóng' : 'mở'} cược`);
       } else {
         toast.error('Cập nhật trạng thái cược thất bại');
@@ -344,8 +344,8 @@ export default function EditRoom({ data }: Readonly<Props>) {
               error={formError?.urlType ?? false}
             >
               <MenuItem value="">Chọn loại</MenuItem>
-              <MenuItem value={'M3U8'}>M3U8</MenuItem>
-              <MenuItem value={'IFRAME'}>IFRAME</MenuItem>
+              <MenuItem value={UrlTypeEnum.M3U8}>M3U8</MenuItem>
+              <MenuItem value={UrlTypeEnum.IFRAME}>IFRAME</MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -492,12 +492,12 @@ export default function EditRoom({ data }: Readonly<Props>) {
             }}
           >
             {!formData?.isOpened ? (
-              <Button onClick={handleToggleSession} variant="contained" sx={{ width: '100%' }} color={'success'}>
+              <Button onClick={handleOpenSession} variant="contained" sx={{ width: '100%' }} color={'success'}>
                 {'Mở phiên'}
               </Button>
-            ) : !formData.isAcceptBetting ? (
-              <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
-                {'Mở cược'}
+            ) : formData.isAcceptBetting ? (
+              <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'error'}>
+                {'Đóng cược'}
               </Button>
             ) : (
               <>
@@ -505,8 +505,8 @@ export default function EditRoom({ data }: Readonly<Props>) {
                   {'Đóng phiên'}
                 </Button>
 
-                <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'error'}>
-                  {'Đóng cược'}
+                <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
+                  {'Mở cược'}
                 </Button>
               </>
             )}

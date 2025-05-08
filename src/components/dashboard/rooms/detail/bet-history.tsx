@@ -4,16 +4,14 @@ import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
 import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
-import { listStatusHistory } from '@/utils/functions/default-function';
+import { TeamEnum } from '@/utils/enum/team.enum';
+import { convertDateTime, listStatusHistory } from '@/utils/functions/default-function';
+import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
+import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
-  Button,
   Card,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   SelectChangeEvent,
   Stack,
   Table,
@@ -27,22 +25,9 @@ import {
   Typography,
 } from '@mui/material';
 
-// Định nghĩa interface cho dữ liệu bảng
-interface BetData {
-  code: string;
-  creatorID: any;
-  money: number;
-  red_odds: number;
-  blue_odds: number;
-  selectedTeam: string;
-  matchedUserId: any;
-  status: string;
-  createdAt: string;
-}
-
 // Định nghĩa interface cho cột bảng
 interface Column {
-  id: keyof BetData | 'action';
+  id: keyof BettingHistoryInterface | 'action' | 'odds';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
@@ -51,7 +36,7 @@ interface Column {
 
 const columns: Column[] = [
   { id: 'code', label: 'Mã cược', minWidth: 80, align: 'left' },
-  { id: 'creatorID', label: 'Người đặt', minWidth: 120, align: 'left' },
+  { id: 'creatorID', label: 'Người đặt', minWidth: 100, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -60,20 +45,12 @@ const columns: Column[] = [
     format: (value: number | undefined) => (value != null ? value.toLocaleString('vi-VN') : 'N/A'),
   },
   {
-    id: 'red_odds',
-    label: 'Tỷ lệ đỏ',
+    id: 'odds',
+    label: 'Tỷ lệ cược',
     minWidth: 100,
     align: 'right',
-    format: (value: number | undefined) => (value != null ? value.toFixed(2) : 'N/A'),
   },
-  {
-    id: 'blue_odds',
-    label: 'Tỷ lệ xanh',
-    minWidth: 100,
-    align: 'right',
-    format: (value: number | undefined) => (value != null ? value.toFixed(2) : 'N/A'),
-  },
-  { id: 'selectedTeam', label: 'Đội chọn', minWidth: 120, align: 'left' },
+  { id: 'selectedTeam', label: 'Đội chọn', minWidth: 150, align: 'left' },
   { id: 'matchedUserId', label: 'Khớp kèo', minWidth: 120, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Thời gian', minWidth: 120, align: 'center' },
@@ -81,19 +58,18 @@ const columns: Column[] = [
 
 interface Props {
   isReload: boolean;
-  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
+  sessionID: string;
+  room: BettingRoomInterface;
 }
 
-export function BetHistoryComponent(): React.JSX.Element {
-  const [isReload, setIsReload] = React.useState<boolean>(true);
-
+export function BetHistoryComponent({ isReload, sessionID, room }: Readonly<Props>): React.JSX.Element {
   // State cho bảng "Phiên cược hiện tại"
   const [currentSessions, setCurrentSessions] = React.useState<any>({ docs: [], totalDocs: 0 });
   const [currentPage, setCurrentPage] = React.useState<number>(0);
   const [currentRowsPerPage, setCurrentRowsPerPage] = React.useState<number>(10);
   const [currentFilter, setCurrentFilter] = React.useState({ code: '', status: '' });
   const [currentOrder, setCurrentOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [currentOrderBy, setCurrentOrderBy] = React.useState<keyof BetData>('code');
+  const [currentOrderBy, setCurrentOrderBy] = React.useState<keyof BettingHistoryInterface>('code');
 
   // State cho bảng "Thông tin cược khác"
   const [otherBets, setOtherBets] = React.useState<any>({ docs: [], totalDocs: 0 });
@@ -101,10 +77,8 @@ export function BetHistoryComponent(): React.JSX.Element {
   const [otherRowsPerPage, setOtherRowsPerPage] = React.useState<number>(10);
   const [otherFilter, setOtherFilter] = React.useState({ code: '', status: '' });
   const [otherOrder, setOtherOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [otherOrderBy, setOtherOrderBy] = React.useState<keyof BetData>('code');
+  const [otherOrderBy, setOtherOrderBy] = React.useState<keyof BettingHistoryInterface>('code');
 
-  const params = useParams<{ id: string }>();
-  const id = params?.id || '';
   const router = useRouter();
 
   const fetchBets = async (
@@ -113,13 +87,13 @@ export function BetHistoryComponent(): React.JSX.Element {
     page: number,
     rowsPerPage: number,
     order: 'asc' | 'desc',
-    orderBy: keyof BetData,
+    orderBy: keyof BettingHistoryInterface,
     selectedTeam: string
   ) => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&status=${filter.status}&isCurrent=${isCurrent}&sort=${sortQuery}&selectedTeam=${selectedTeam}`;
-      const response = await paginateBetHistoryApi(id, query);
+      const response = await paginateBetHistoryApi(sessionID, query);
       if (response.status === 200 || response.status === 201) {
         return response.data;
       }
@@ -138,7 +112,6 @@ export function BetHistoryComponent(): React.JSX.Element {
       ]).then(([current, other]) => {
         setCurrentSessions(current);
         setOtherBets(other);
-        setIsReload(false);
       });
     }
   }, [isReload]);
@@ -164,7 +137,7 @@ export function BetHistoryComponent(): React.JSX.Element {
     otherOrderBy,
   ]);
 
-  const handleRequestSort = (property: keyof BetData, isCurrent: boolean) => {
+  const handleRequestSort = (property: keyof BettingHistoryInterface, isCurrent: boolean) => {
     if (isCurrent) {
       const isAsc = currentOrderBy === property && currentOrder === 'asc';
       setCurrentOrder(isAsc ? 'desc' : 'asc');
@@ -224,7 +197,7 @@ export function BetHistoryComponent(): React.JSX.Element {
     page: number,
     rowsPerPage: number,
     order: 'asc' | 'desc',
-    orderBy: keyof BetData,
+    orderBy: keyof BettingHistoryInterface,
     isCurrent: boolean
   ) => (
     <Card>
@@ -232,16 +205,15 @@ export function BetHistoryComponent(): React.JSX.Element {
         {title}
       </Typography>
       <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        {/* <TextField
-          label="Tìm theo mã cược"
+        <TextField
+          label="Tìm theo tên"
           name="code"
           value={filter.code}
           onChange={(e) => handleFilterChange(e, isCurrent)}
           size="small"
-          sx={{ width: '100%' }}
-        /> */}
-
-        {/* <FormControl sx={{ width: '100%' }} size="small">
+          sx={{ width: '50%' }}
+        />
+        {/* <FormControl sx={{ width: '50%' }} size="small">
           <InputLabel>Trạng thái</InputLabel>
           <Select
             label="Trạng thái"
@@ -251,7 +223,7 @@ export function BetHistoryComponent(): React.JSX.Element {
           >
             <MenuItem value="">Tất cả</MenuItem>
             {listStatusHistory.map((item, index) => (
-              <MenuItem key={+index} value={item.value}>
+              <MenuItem key={index} value={item.value}>
                 {item.label}
               </MenuItem>
             ))}
@@ -264,14 +236,24 @@ export function BetHistoryComponent(): React.JSX.Element {
             <TableRow>
               {columns.map((column) => (
                 <TableCell key={column.id} align={column.align} sx={{ minWidth: column.minWidth }}>
-                  {column.label}
+                  <TableSortLabel
+                    active={orderBy === column.id}
+                    direction={orderBy === column.id ? order : 'asc'}
+                    onClick={() => handleRequestSort(column.id as keyof BettingHistoryInterface, isCurrent)}
+                  >
+                    {column.label}
+                  </TableSortLabel>
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {data?.docs?.map((row: BetData) => (
-              <TableRow hover key={row?.code}>
+            {data?.docs?.map((row: BettingHistoryInterface) => (
+              <TableRow
+                hover
+                key={row?._id}
+                // onClick={() => handleViewDetail(row?._id)}
+              >
                 <TableCell>
                   <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
                     <Typography variant="subtitle2">{row?.code}</Typography>
@@ -282,12 +264,19 @@ export function BetHistoryComponent(): React.JSX.Element {
                   {columns.find((col) => col.id === 'money')?.format?.(row?.money) || row?.money}
                 </TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'red_odds')?.format?.(row?.red_odds) || row?.red_odds}
+                  {row?.win}
+                  {' : '}
+                  {row?.lost}
                 </TableCell>
-                <TableCell align="right">
-                  {columns.find((col) => col.id === 'blue_odds')?.format?.(row?.blue_odds) || row?.blue_odds}
+                <TableCell>
+                  <Typography
+                    variant="caption"
+                    bgcolor={row?.selectedTeam === TeamEnum.BLUE ? '#33bfff' : '#e57373'}
+                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 14 }}
+                  >
+                    {row?.selectedTeam === TeamEnum.BLUE ? room.blueName : room.redName}
+                  </Typography>
                 </TableCell>
-                <TableCell>{row?.selectedTeam}</TableCell>
                 <TableCell>{row?.matchedUserId?.username}</TableCell>
                 <TableCell>
                   <Typography
@@ -298,7 +287,7 @@ export function BetHistoryComponent(): React.JSX.Element {
                     {listStatusHistory.find((item) => item.value === row.status)?.label || ''}
                   </Typography>
                 </TableCell>
-                <TableCell>{row?.createdAt}</TableCell>
+                <TableCell>{convertDateTime(row?.createdAt?.toString() || '')}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -321,7 +310,7 @@ export function BetHistoryComponent(): React.JSX.Element {
     <Box sx={{ width: '100%', display: 'flex', flexDirection: 'row', gap: 2 }}>
       <Box sx={{ flex: 1, py: 1, px: 1, mt: 4, overflow: 'auto' }}>
         {renderTable(
-          'Phiên cược hiện tại',
+          `Phiên cược hiện tại (${room.redName})`,
           'current',
           currentSessions,
           currentFilter,
@@ -334,7 +323,7 @@ export function BetHistoryComponent(): React.JSX.Element {
       </Box>
       <Box sx={{ flex: 1, py: 1, px: 1, mt: 4, overflow: 'auto' }}>
         {renderTable(
-          'Phiên cược hiện tại',
+          `Phiên cược hiện tại (${room.blueName})`,
           'other',
           otherBets,
           otherFilter,

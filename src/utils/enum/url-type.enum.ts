@@ -1,4 +1,4 @@
 export enum UrlTypeEnum {
-  M3U8 = 'M3U8',
-  IFRAME = 'IFRAME',
+  M3U8 = 'm3u8',
+  IFRAME = 'iframe',
 }

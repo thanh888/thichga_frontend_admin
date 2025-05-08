@@ -7,7 +7,6 @@ import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import {
   Box,
   Button,
-  ButtonBase,
   FormControl,
   Grid,
   InputLabel,
@@ -115,7 +114,7 @@ export default function SampleOdds({ data }: { data: any }) {
           px: 4,
           borderRadius: 2,
           boxShadow: 3,
-          mt: 4,
+          my: 4,
           display: 'flex',
           justifyContent: 'flex-start',
           alignItems: 'center',

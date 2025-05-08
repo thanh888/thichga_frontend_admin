@@ -64,14 +64,13 @@ interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function BetSessionComponent(): React.JSX.Element {
-  const [isReload, setIsReload] = React.useState<boolean>(true);
+export function BetSessionComponent({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
   const [sessions, setSessions] = React.useState<any>(null);
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [filter, setFilter] = React.useState({ code: '', isOpened: '' });
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof Betsession>('code');
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = React.useState<keyof Betsession>('createdAt');
 
   const params = useParams<{ id: string }>();
   const id = params?.id || '';

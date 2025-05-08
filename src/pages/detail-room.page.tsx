@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getOneBetroomId } from '@/services/dashboard/bet-room.api';
+import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 
 import BetHistoryComponent from '@/components/dashboard/rooms/detail/bet-history';
 import BetOptionComponent from '@/components/dashboard/rooms/detail/bet-option';
@@ -34,55 +35,37 @@ export default function DetailRoom() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? '';
 
-  const [formData, setFormData] = React.useState<RoomeFormData | null>(null);
+  const [isReload, setIsReload] = useState<boolean>(true);
 
-  const fetchRoomData = async (roomId: string): Promise<RoomeFormData> => {
+  const [room, setRoom] = React.useState<BettingRoomInterface>();
+
+  const fetchRoomData = async (roomId: string) => {
     try {
       const response = await getOneBetroomId(roomId);
       if (response.status === 200) {
-        return response.data;
+        setRoom(response.data);
       }
-      throw new Error('Failed to fetch room data');
     } catch (error) {
       console.log(error);
-      throw new Error('Error fetching room data');
     }
   };
 
   React.useEffect(() => {
-    if (id) {
-      fetchRoomData(id).then((data) => {
-        setFormData({
-          roomName: data.roomName ?? '',
-          thumbnail: data.thumbnail ?? '',
-          urlLive: data.urlLive ?? '',
-          urlType: data.urlType ?? '',
-          secondsEnding: data.secondsEnding ?? '',
-          fee: data.fee ?? '',
-          marquee: data.marquee ?? '',
-          chattingJframe: data.chattingJframe ?? '',
-          redName: data.redName ?? '',
-          blueName: data.blueName ?? '',
-          leftText: data.leftText ?? '',
-          centerText: data.centerText ?? '',
-          rightText: data.rightText ?? '',
-          isOpened: data.isOpened ?? false,
-          isAcceptBetting: data.isAcceptBetting ?? false,
-          redOdds: data.redOdds ?? 10,
-          blueOdds: data.blueOdds ?? 10,
-          typeRoom: data.typeRoom ?? '',
-        });
-      });
+    if (id && isReload) {
+      fetchRoomData(id);
+      setIsReload(false);
     }
-  }, [id]);
+  }, [id, isReload]);
 
   return (
     <>
-      <EditRoom data={formData} />
-      <SampleOdds data={formData} />
+      {room && <EditRoom data={room} setIsReload={setIsReload} />}
+      <SampleOdds data={room} />
       <BetOptionComponent />
-      <BetHistoryComponent />
-      <BetSesionComponent />
+      {room?.latestSessionID && (
+        <BetHistoryComponent sessionID={room.latestSessionID} room={room} isReload={isReload} />
+      )}
+      {room?.latestSessionID && <BetSesionComponent isReload={isReload} setIsReload={setIsReload} />}
     </>
   );
 }
