@@ -32,24 +32,6 @@ import { toast } from 'react-toastify';
 
 import { useSocket } from '@/hooks/socket';
 
-interface RoomeFormData {
-  roomName: string;
-  thumbnail: string;
-  urlLive: string;
-  urlType: UrlTypeEnum.IFRAME | string;
-  secondsEnding: string;
-  fee: string;
-  marquee: string;
-  chattingJframe: string;
-  redName: string;
-  blueName: string;
-  leftText: string;
-  centerText: string;
-  rightText: string;
-  isOpened?: boolean;
-  isAcceptBetting?: boolean;
-}
-
 // Styled TextareaAutosize to match OutlinedInput
 const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
   width: '100%',

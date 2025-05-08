@@ -19,7 +19,11 @@ export function AdminsStatusCode(): React.JSX.Element {
 
   const handleUpdateDepositMode = async () => {
     try {
-      const reponse = await UpdateSettingApi(setting?._id, { referralCodeEnabled });
+      if (!setting?._id) {
+        toast.error('Invalid setting ID');
+        return;
+      }
+      const reponse = await UpdateSettingApi(setting._id, { referralCodeEnabled });
       if (reponse.status === 200 || reponse.status === 201) {
         if (typeof checkSettingSession === 'function') {
           await checkSettingSession();
