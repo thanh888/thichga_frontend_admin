@@ -205,6 +205,13 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         setIsReload(true);
         toast.success(`Đã mở phiên`);
+        if (socket) {
+          socket.emit('update-room', {
+            roomID: id,
+            isOpended: true,
+          });
+          socket.off('update-room');
+        }
       } else {
         toast.error('Cập nhật trạng thái phiên thất bại');
       }
@@ -242,6 +249,8 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('isAcceptBetting', String(!formData.isAcceptBetting));
+      formDataToSend.append('secondsEnding', String(formData.secondsEnding));
+      formDataToSend.append('latestSessionID', String(formData.latestSessionID));
       const response = await EnableBetting(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
