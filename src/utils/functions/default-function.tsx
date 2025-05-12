@@ -17,6 +17,14 @@ export function setFieldError(setFormError: any, key: string, value: boolean) {
   setFormError((prev: any) => ({ ...prev, [key]: value }));
 }
 
+export const ConvertMoneyVND = (value: number): string => {
+  return value.toLocaleString('it-IT', { style: 'currency', currency: 'VND' });
+};
+
+export const numberThousand = (value: string) => {
+  return Number(value).toLocaleString('de-DE');
+};
+
 // Dữ liệu chọn chức vụ
 export const rolesAdmin = [
   { value: RoleUsers.ADMIN, label: 'ADMIN' },

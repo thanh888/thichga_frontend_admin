@@ -4,6 +4,7 @@ import * as React from 'react';
 import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
   Button,
@@ -53,7 +54,7 @@ const columns: Column[] = [
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
-  { id: 'status', label: 'Trạng thái', minWidth: 120, align: 'left' },
+  { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
@@ -97,18 +98,10 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
-        const transformedData = {
-          ...response.data,
-          docs: response.data.docs.map((item: any) => ({
-            ...item,
-            userID: item.userID?.username ?? 'N/A',
-            adminID: item.adminID?.username ?? 'N/A',
-          })),
-        };
-        setData(transformedData);
+        setData({ ...response.data, docs: response.data.docs });
       } else {
         setData({ docs: [], totalDocs: 0 });
       }
@@ -239,17 +232,22 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
-                            Cập nhật trạng thái
+                          <Button
+                            variant="outlined"
+                            disabled={row.status !== DepositStatusEnum.PENDING}
+                            size="small"
+                            onClick={() => handleOpenDialog(row)}
+                          >
+                            <BorderColorIcon />
                           </Button>
                         </TableCell>
                       );
                     }
                     let value = row[column.id as keyof DepositHistoryFormData];
                     if (column.id === 'userID') {
-                      value = row.userID || 'N/A';
+                      value = row?.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
-                      value = row.adminID || 'N/A';
+                      value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>

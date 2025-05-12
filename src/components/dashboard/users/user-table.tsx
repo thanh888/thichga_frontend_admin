@@ -51,7 +51,7 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const fetchAccounts = async () => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.username}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.username}&sort=${sortQuery}`;
       const response = await paginateUserApi(query);
 
       if (response.status === 200 || response.status === 201) {

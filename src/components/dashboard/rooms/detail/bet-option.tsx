@@ -3,7 +3,10 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
-import { createBetOption } from '@/services/dashboard/bet-option.api';
+import { createBetOption, paginateOptionBySessionApi } from '@/services/dashboard/bet-option.api';
+import { TeamEnum } from '@/utils/enum/team.enum';
+import { convertDateTime } from '@/utils/functions/default-function';
+import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
@@ -28,12 +31,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
+
+import { useUser } from '@/hooks/use-user';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface BetData {
   code: string;
-  red_odds: number;
-  blue_odds: number;
+  win: number;
+  lost: number;
   selectedTeam: string;
   createdAt: string;
 }
@@ -51,7 +57,7 @@ const columns: Column[] = [
   { id: 'odds', label: 'Tỉ lệ cược', minWidth: 100, align: 'left' },
   { id: 'selectedTeam', label: 'Chọn', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Thời gian tạo', minWidth: 150, align: 'left' },
-  { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
+  // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
 interface Props {
@@ -59,35 +65,30 @@ interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function BetOptionComponent(): React.JSX.Element {
+export function BetOptionComponent({ room }: { room: BettingRoomInterface }): React.JSX.Element {
   const [isReload, setIsReload] = React.useState<boolean>(true);
 
   const [bets, setBets] = React.useState<BetData[]>([]);
   const [openModal, setOpenModal] = React.useState(false);
   const [formData, setFormData] = React.useState({
-    red_odds: '10',
-    blue_odds: '10',
-    result: 'Gà đỏ',
+    win: '10',
+    lost: '10',
+    selectedTeam: '',
   });
 
-  const params = useParams<{ id: string }>();
-  const sessionGameId = params?.id || '';
   const router = useRouter();
 
   const oddsOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 
   const fetchBets = async () => {
+    if (!room.latestSessionID) {
+      return;
+    }
     try {
-      const query = `limit=5&isCurrent=true`; // Fetch all bets, assuming high limit
-      const response = await paginateBetHistoryApi(sessionGameId, query);
+      const response = await paginateOptionBySessionApi(room.latestSessionID);
       if (response.status === 200 || response.status === 201) {
         // Transform creatorID and matchedUserId to usernames (if needed)
-        const transformedData = response.data.docs.map((item: any) => ({
-          ...item,
-          creatorID: item.creatorID?.username || 'N/A',
-          matchedUserId: item.matchedUserId?.username || 'N/A',
-        }));
-        setBets(transformedData);
+        setBets(response.data);
       } else {
         setBets([]);
       }
@@ -104,13 +105,14 @@ export function BetOptionComponent(): React.JSX.Element {
     }
   }, [isReload]);
 
+  const { user } = useUser();
+
   const handleOpenModal = () => {
     setOpenModal(true);
   };
 
   const handleCloseModal = () => {
     setOpenModal(false);
-    setFormData({ red_odds: '10', blue_odds: '10', result: 'Gà đỏ' }); // Reset form
   };
 
   const handleFormChange = (
@@ -122,21 +124,32 @@ export function BetOptionComponent(): React.JSX.Element {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!room.latestSessionID) {
+      return;
+    }
+
     try {
-      const createForm = {
-        betSessionID: '',
-        makerID: '',
-        selectedTeam: '',
-        red_odds: '',
-        blue_odds: '',
+      if (!formData.selectedTeam) {
+        toast.warning('Vui lòng chọn đội');
+        return;
+      }
+
+      const optionForm = {
+        betSessionID: room.latestSessionID,
+        makerID: user._id,
+        selectedTeam: formData.selectedTeam,
+        win: formData.win,
+        lost: formData.lost,
       };
-      const response = await createBetOption('', formData);
-      if ((response.status === 201, response.status === 200)) {
+
+      const response = await createBetOption(optionForm);
+      if (response.status === 201 || response.status === 200) {
         setIsReload(true); // Trigger table refresh
-        handleCloseModal();
+        toast.success('Tạo thành công');
       } else {
         console.error('Failed to save bet:', response.statusText);
       }
+      handleCloseModal();
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -152,7 +165,7 @@ export function BetOptionComponent(): React.JSX.Element {
         <Typography variant="h5">
           Danh sách tạo cược cho phiên{' '}
           <Typography component="span" fontWeight="bold">
-            #{sessionGameId}
+            #{room?.latestSessionID}
           </Typography>
         </Typography>
         <Button variant="contained" color="primary" onClick={handleOpenModal}>
@@ -177,27 +190,16 @@ export function BetOptionComponent(): React.JSX.Element {
                 <TableCell>
                   <Typography variant="subtitle2">{row.code}</Typography>
                 </TableCell>
-                <TableCell>{`${row.red_odds}:${row.blue_odds}`}</TableCell>
+                <TableCell>{`${row.win}:${row.lost}`}</TableCell>
                 <TableCell>
-                  <Typography fontWeight="bold" color={row.selectedTeam === 'Gà đỏ' ? 'error.main' : 'primary.main'}>
-                    {row.selectedTeam}
+                  <Typography
+                    fontWeight="bold"
+                    color={row.selectedTeam === TeamEnum.RED ? 'error.main' : 'primary.main'}
+                  >
+                    {row.selectedTeam === TeamEnum.RED ? 'Gà đỏ' : 'Gà xanh'}
                   </Typography>
                 </TableCell>
-                <TableCell>
-                  {new Date(row.createdAt).toLocaleString('vi-VN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })}
-                </TableCell>
-                <TableCell align="center">
-                  <Button variant="contained" color="success" onClick={() => handleViewDetail(row.code)}>
-                    Chi tiết
-                  </Button>
-                </TableCell>
+                <TableCell>{convertDateTime(row.createdAt)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -209,14 +211,14 @@ export function BetOptionComponent(): React.JSX.Element {
         <form onSubmit={handleFormSubmit}>
           <DialogTitle>Tạo cược</DialogTitle>
           <DialogContent>
-            <input type="hidden" name="sessionGameId" value={sessionGameId} />
+            <input type="hidden" name="sessionGameId" value={room?.latestSessionID} />
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <FormControl fullWidth size="small">
                   <Typography variant="subtitle2" mb={1}>
                     Đặt
                   </Typography>
-                  <Select name="red_odds" value={formData.red_odds} onChange={handleFormChange}>
+                  <Select name="win" value={formData.win} onChange={handleFormChange}>
                     {oddsOptions.map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
@@ -230,7 +232,7 @@ export function BetOptionComponent(): React.JSX.Element {
                   <Typography variant="subtitle2" mb={1}>
                     Ăn
                   </Typography>
-                  <Select name="blue_odds" value={formData.blue_odds} onChange={handleFormChange}>
+                  <Select name="lost" value={formData.lost} onChange={handleFormChange}>
                     {oddsOptions.map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
@@ -241,13 +243,13 @@ export function BetOptionComponent(): React.JSX.Element {
               </Grid>
               <Grid item xs={12}>
                 <FormControl component="fieldset">
-                  <RadioGroup row name="result" value={formData.result} onChange={handleFormChange}>
+                  <RadioGroup row name="selectedTeam" value={formData.selectedTeam} onChange={handleFormChange}>
                     <FormControlLabel
                       value="RED"
                       control={<Radio />}
                       label={
                         <Typography color="error.main" fontWeight="bold">
-                          TH NGUYÊN
+                          {room?.redName}
                         </Typography>
                       }
                     />
@@ -256,7 +258,7 @@ export function BetOptionComponent(): React.JSX.Element {
                       control={<Radio />}
                       label={
                         <Typography color="primary.main" fontWeight="bold">
-                          FC 0333343
+                          {room?.blueName}
                         </Typography>
                       }
                     />
@@ -270,7 +272,7 @@ export function BetOptionComponent(): React.JSX.Element {
               Close
             </Button>
             <Button type="submit" color="primary">
-              Thêm
+              Tạo
             </Button>
           </DialogActions>
         </form>

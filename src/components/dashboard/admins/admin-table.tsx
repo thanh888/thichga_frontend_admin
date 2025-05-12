@@ -54,7 +54,7 @@ export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.J
   const fetchAccounts = async () => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.username}&role=${filter.role}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.username}&role=${filter.role}&sort=${sortQuery}`;
       const response = await paginateAdminApi(query);
 
       if (response.status === 200 || response.status === 201) {

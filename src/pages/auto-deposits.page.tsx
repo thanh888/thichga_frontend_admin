@@ -86,7 +86,7 @@ const AutoDepositHistoryPage: React.FC<Props> = ({ isReload, setIsReload }) => {
   const fetchDeposits = async () => {
     try {
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.AUTO}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.AUTO}`;
       const response = await paginate(query);
       if (response.status === 200 || response.status === 201) {
         const transformedData = {
@@ -199,7 +199,12 @@ const AutoDepositHistoryPage: React.FC<Props> = ({ isReload, setIsReload }) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={row.status !== DepositStatusEnum.PENDING}
+                            onClick={() => handleOpenDialog(row)}
+                          >
                             Cập nhật trạng thái
                           </Button>
                         </TableCell>

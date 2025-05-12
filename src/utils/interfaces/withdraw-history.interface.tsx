@@ -4,7 +4,7 @@ import { BankInteface } from './bank.interface';
 // Interface for the WithdrawTransaction document
 export interface WithdrawTransactionInterface {
   // ID of the user who initiated the withdrawal
-  userID?: string;
+  userID?: any;
 
   // Status of the withdrawal (e.g., PENDING, APPROVED, REJECTED)
   status?: WithdrawStatusEnum;

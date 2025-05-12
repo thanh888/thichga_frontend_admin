@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { CreateBetRoom, uploadImageApi } from '@/services/dashboard/bet-room.api';
+import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import { UrlTypeEnum } from '@/utils/enum/url-type.enum';
 import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
 import CloseIcon from '@mui/icons-material/Close';
@@ -55,6 +56,7 @@ interface RoomeFormData {
   leftText: string;
   centerText: string;
   rightText: string;
+  typeRoom: TypeBetRoomEnum.NORMAL | string;
 }
 
 const defaultFormData: RoomeFormData = {
@@ -71,6 +73,7 @@ const defaultFormData: RoomeFormData = {
   leftText: '',
   centerText: '',
   rightText: '',
+  typeRoom: '',
 };
 
 export default function CreateRoom({ openCreate, setOpenCreate, setIsReload }: Readonly<CreateRoomProps>) {
@@ -89,7 +92,10 @@ export default function CreateRoom({ openCreate, setOpenCreate, setIsReload }: R
         ...prev,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
+      if (
+        !value &&
+        ['roomName', 'urlLive', 'urlType', 'secondsEnding', 'redName', 'blueName', 'typeRoom', 'fee'].includes(name)
+      ) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -143,11 +149,18 @@ export default function CreateRoom({ openCreate, setOpenCreate, setIsReload }: R
       secondsEnding: formData.secondsEnding,
       redName: formData.redName,
       blueName: formData.blueName,
+      typeRoom: formData.typeRoom,
+      fee: formData.fee,
     };
     const isNotNull = CheckFormDataNull(requiredFields, setFormError);
 
     if (!isNotNull) {
       toast.error('Hãy điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    if (!formData.thumbnail) {
+      toast.error('Hãy chọn hình ảnh');
       return;
     }
 
@@ -169,7 +182,7 @@ export default function CreateRoom({ openCreate, setOpenCreate, setIsReload }: R
         formDataToSend.append('thumbnail', formData.thumbnail);
       }
 
-      const response = await CreateBetRoom(formDataToSend); // Assumed room-specific API
+      const response = await CreateBetRoom(formData); // Assumed room-specific API
       if (response.status === 201 || response.status === 200) {
         setIsReload(true);
         toast.success('Tạo phòng thành công');
@@ -399,6 +412,27 @@ export default function CreateRoom({ openCreate, setOpenCreate, setIsReload }: R
                   value={formData.rightText}
                   onChange={handleChange}
                 />
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Thể loại phòng
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={12}>
+              <FormControl fullWidth required>
+                <InputLabel>Loại phòng</InputLabel>
+                <Select
+                  label="Loại phòng"
+                  name="typeRoom"
+                  value={formData.typeRoom}
+                  onChange={handleChange}
+                  error={formError?.typeRoom ?? false}
+                >
+                  <MenuItem value="">Chọn loại</MenuItem>
+                  <MenuItem value={TypeBetRoomEnum.NORMAL}>Truyền thống</MenuItem>
+                  <MenuItem value={TypeBetRoomEnum.SOLO}>Đối kháng</MenuItem>
+                </Select>
               </FormControl>
             </Grid>
           </Grid>

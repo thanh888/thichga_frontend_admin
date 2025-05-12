@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { updateWithdrawStatusApi } from '@/services/dashboard/withdraw-history.api';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
+import { ConvertMoneyVND } from '@/utils/functions/default-function';
 import {
   Button,
   Dialog,
@@ -17,6 +18,7 @@ import {
 import { toast } from 'react-toastify';
 
 import { UserContext } from '@/contexts/user-context';
+import { useSocket } from '@/hooks/socket';
 
 interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
@@ -52,9 +54,10 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
   // Handle status update
   const handleUpdateStatus = async () => {
     if (!newStatus || newStatus === openDialog.status) {
-      handleCloseDialog();
+      toast.warning('Vui lòng chọn trạng thái');
       return;
     }
+    console.log(openDialog);
 
     try {
       const formData = {
@@ -83,15 +86,35 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       onClose={handleCloseDialog}
       aria-labelledby="status-dialog-title"
       aria-describedby="status-dialog-description"
-      maxWidth="xs"
+      maxWidth="sm"
       fullWidth
     >
       <DialogTitle id="status-dialog-title">Cập nhật trạng thái giao dịch</DialogTitle>
       <DialogContent>
-        <DialogContentText id="status-dialog-description" sx={{ mb: 2 }}>
-          Cập nhật trạng thái rút tiền: {openDialog?.code}
-        </DialogContentText>
-        <FormControl fullWidth>
+        <TextField label="Tên ngân hàng" value={openDialog?.bank?.bankName || ''} fullWidth margin="dense" disabled />
+        <TextField
+          label="Số tài khoản"
+          value={openDialog?.bank?.accountNumber || ''}
+          fullWidth
+          margin="dense"
+          disabled
+        />
+        <TextField
+          label="Tên chủ tài khoản"
+          value={openDialog?.bank?.accountName || ''}
+          fullWidth
+          margin="dense"
+          disabled
+        />
+        <TextField label="Chi nhánh" value={openDialog?.bank?.branch || ''} fullWidth margin="dense" disabled />
+        <TextField
+          label="Số tiền"
+          value={ConvertMoneyVND(Number(openDialog?.money) ?? 0) || '0'}
+          fullWidth
+          margin="dense"
+          disabled
+        />
+        <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>
           <Select label="Trạng thái" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
             {Object.values(WithdrawStatusEnum).map((status) => (

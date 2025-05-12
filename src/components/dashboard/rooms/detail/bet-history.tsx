@@ -92,7 +92,7 @@ export function BetHistoryComponent({ isReload, sessionID, room }: Readonly<Prop
   ) => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&status=${filter.status}&isCurrent=${isCurrent}&sort=${sortQuery}&selectedTeam=${selectedTeam}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.code}&status=${filter.status}&isCurrent=${isCurrent}&sort=${sortQuery}&selectedTeam=${selectedTeam}`;
       const response = await paginateBetHistoryApi(sessionID, query);
       if (response.status === 200 || response.status === 201) {
         return response.data;

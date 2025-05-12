@@ -10,6 +10,6 @@ export const WidthdrawPaginate = async (query: string) => {
 };
 
 export const updateWithdrawStatusApi = async (id: string, formData: any) => {
-  const res = await axiosCustomize.put(`/withdraw-history/${id}`, formData);
+  const res = await axiosCustomize.put(`/withdraw-history/${id}/status`, formData);
   return res;
 };

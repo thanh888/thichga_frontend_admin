@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { WidthdrawPaginate, WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
   Button,
@@ -45,7 +46,7 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 120, align: 'left' },
   { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   { id: 'bank', label: 'Ngân hàng', minWidth: 150, align: 'left' },
   {
@@ -89,17 +90,12 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const fetchWithdraws = async () => {
     try {
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}`;
       const response = await WidthdrawPaginate(query);
       if (response.status === 200 || response.status === 201) {
         const transformedData = {
           ...response.data,
-          docs: response.data.docs.map((item: any) => ({
-            ...item,
-            userID: item.userID?.username ?? 'N/A',
-            adminID: item.adminID?.username ?? 'N/A',
-            bank: item.bank?.bankName ?? 'N/A',
-          })),
+          docs: response.data.docs,
         };
         setData(transformedData);
       } else {
@@ -137,6 +133,8 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   // Open dialog for status update
   const handleOpenDialog = (data: any) => {
+    console.log(data);
+
     setOpenDialog(data);
   };
 
@@ -204,19 +202,24 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
-                            Cập nhật trạng thái
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={row.status !== WithdrawStatusEnum.PENDING}
+                            onClick={() => handleOpenDialog(row)}
+                          >
+                            <BorderColorIcon />
                           </Button>
                         </TableCell>
                       );
                     }
                     let value = row[column.id as keyof WithdrawHistoryFormData];
                     if (column.id === 'userID') {
-                      value = row.userID || 'N/A';
+                      value = row?.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
-                      value = row.adminID || 'N/A';
+                      value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'bank') {
-                      value = row.bank || 'N/A';
+                      value = row?.bank?.bankName || 'N/A';
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>

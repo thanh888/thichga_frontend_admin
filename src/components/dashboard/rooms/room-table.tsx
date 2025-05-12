@@ -48,15 +48,15 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [filter, setFilter] = React.useState({ roomName: '', typeRoom: '', isOpened: '' });
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof RoomFormData>('roomName');
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = React.useState<keyof RoomFormData>('createdAt');
 
   const router = useRouter();
 
   const fetchRooms = async () => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.roomName}&typeRoom=${filter.typeRoom}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.roomName}&typeRoom=${filter.typeRoom}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
       const response = await paginateBetRoomApi(query); // Assumed room-specific API
 
       if (response.status === 200 || response.status === 201) {

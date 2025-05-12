@@ -14,7 +14,7 @@ export default function DepositModePage() {
 
   const checkSettingSession = React.useContext(SettingContext)?.checkSettingSession;
 
-  const [selectMode, setSelectMode] = useState<string>('');
+  const [selectMode, setSelectMode] = useState<string>(setting?.deposit_mode ?? '');
 
   const handleUpdateDepositMode = async () => {
     try {

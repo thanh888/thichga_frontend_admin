@@ -16,6 +16,11 @@ import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   Grid,
   InputAdornment,
@@ -31,6 +36,12 @@ import {
 import { toast } from 'react-toastify';
 
 import { useSocket } from '@/hooks/socket';
+
+// Define TeamEnum
+export enum TeamEnum {
+  RED = 'RED',
+  BLUE = 'BLUE',
+}
 
 // Styled TextareaAutosize to match OutlinedInput
 const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
@@ -67,10 +78,11 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const router = useRouter();
 
   const [formData, setFormData] = React.useState<BettingRoomInterface>({});
-
   const [formError, setFormError] = React.useState<any>({});
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
+  const [openWinnerDialog, setOpenWinnerDialog] = React.useState<boolean>(false);
+  const [selectedWinner, setSelectedWinner] = React.useState<TeamEnum | null>(null);
 
   const socket = useSocket();
 
@@ -84,7 +96,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
 
   React.useEffect(() => {
     if (data?.isOpened) {
-      //gets session isopened ==== true
+      // gets session isOpened ==== true
     }
   }, [data?.isOpened]);
 
@@ -166,6 +178,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       formDataToSend.append('secondsEnding', formData?.secondsEnding?.toString() ?? '');
       formDataToSend.append('fee', formData?.fee?.toString() ?? '');
       formDataToSend.append('marquee', formData.marquee ?? '');
+
       formDataToSend.append('chattingJframe', formData.chattingJframe ?? '');
       formDataToSend.append('redName', formData.redName ?? '');
       formDataToSend.append('blueName', formData.blueName ?? '');
@@ -221,13 +234,22 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
     }
   };
 
-  const handleCloseSession = async () => {
+  const handleCloseSession = () => {
+    setOpenWinnerDialog(true); // Open the winner selection dialog
+  };
+
+  const handleConfirmCloseSession = async () => {
+    if (!formData || !selectedWinner) return;
+
     try {
-      const response = await CloseSession(id, { latestSessionID: formData.latestSessionID });
+      const response = await CloseSession(id, {
+        latestSessionID: formData.latestSessionID,
+        winner: selectedWinner,
+      });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         setIsReload(true);
-        toast.success(`Đã đóng phiên`);
+        toast.success(`Đã đóng phiên với đội thắng: ${selectedWinner}`);
         if (socket) {
           socket.emit('update-room', {
             roomID: id,
@@ -241,6 +263,9 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
     } catch (error) {
       console.error('Error details:', error);
       toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    } finally {
+      setOpenWinnerDialog(false);
+      setSelectedWinner(null);
     }
   };
 
@@ -495,7 +520,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
                 <Button onClick={handleCloseSession} variant="contained" sx={{ width: '100%' }} color={'error'}>
                   {'Đóng phiên'}
                 </Button>
-
                 <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
                   {'Mở cược'}
                 </Button>
@@ -504,6 +528,53 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
           </Box>
         </Grid>
       </Grid>
+
+      {/* Winner Selection Dialog */}
+      <Dialog
+        open={openWinnerDialog}
+        onClose={() => setOpenWinnerDialog(false)}
+        aria-labelledby="winner-dialog-title"
+        aria-describedby="winner-dialog-description"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="winner-dialog-title">Chọn đội chiến thắng</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="winner-dialog-description">
+            Vui lòng chọn đội chiến thắng cho phiên này.
+          </DialogContentText>
+          <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: 'center' }}>
+            <Button
+              variant={selectedWinner === TeamEnum.RED ? 'contained' : 'outlined'}
+              color="error"
+              onClick={() => setSelectedWinner(TeamEnum.RED)}
+            >
+              {formData?.redName || 'Đội Đỏ'}
+            </Button>
+            <Button
+              variant={selectedWinner === TeamEnum.BLUE ? 'contained' : 'outlined'}
+              color="primary"
+              onClick={() => setSelectedWinner(TeamEnum.BLUE)}
+            >
+              {formData?.blueName || 'Đội Xanh'}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenWinnerDialog(false)} color="primary">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmCloseSession}
+            color="primary"
+            disabled={!selectedWinner}
+            variant="contained"
+            autoFocus
+          >
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

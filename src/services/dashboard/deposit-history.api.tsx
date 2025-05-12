@@ -10,6 +10,6 @@ export const paginate = async (query: string) => {
 };
 
 export const updateDepositStatusApi = async (id: string, formData: any) => {
-  const res = await axiosCustomize.put(`/deposit-history/${id}`, formData);
+  const res = await axiosCustomize.put(`/deposit-history/${id}/status`, formData);
   return res;
 };

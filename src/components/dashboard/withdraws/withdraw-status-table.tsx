@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
-import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
   Button,
@@ -26,9 +26,15 @@ import UpdateWithdrawStatusComponent from './update-withdraw-status';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface WithdrawHistoryFormData {
-  bank: any;
+  bank: {
+    bankName?: string;
+    accountNumber?: string;
+    accountName?: string;
+    branch?: string;
+    transferContent?: string;
+  };
   feedback: string;
-  userID: any;
+  userID: { _id: string; username: string };
   money: number;
   adminID: any;
   status: string;
@@ -46,7 +52,7 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
+  { id: 'code', label: 'Mã giao dịch', minWidth: 120, align: 'left' },
   { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   { id: 'bank', label: 'Ngân hàng', minWidth: 120, align: 'left' },
   {
@@ -102,18 +108,13 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     try {
       const status = getStatus(tabValue) ?? WithdrawStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
       const response = await WithdrawByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
-        const transformedData = {
+        setData({
           ...response.data,
-          docs: response.data.docs.map((item: any) => ({
-            ...item,
-            userID: item.userID?.username ?? 'N/A',
-            adminID: item.adminID?.username ?? 'N/A',
-          })),
-        };
-        setData(transformedData);
+          docs: response.data.docs,
+        });
       } else {
         setData({ docs: [], totalDocs: 0 });
       }
@@ -154,8 +155,8 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   };
 
   // Open dialog for status update
-  const handleOpenDialog = (data: any) => {
-    setOpenDialog(data);
+  const handleOpenDialog = (rowData: any) => {
+    setOpenDialog(rowData);
   };
 
   // Handle page change
@@ -225,10 +226,9 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           label="Tìm kiếm"
           variant="outlined"
           size="small"
-          fullWidth
           value={searchTerm}
           onChange={handleSearch}
-          sx={{ mb: 2, mx: 2 }}
+          sx={{ my: 2, mx: 2 }}
         />
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-status-table">
@@ -252,25 +252,30 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.docs?.map((row) => (
+              {data?.docs?.map((row: WithdrawHistoryFormData) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
                     if (column.id === 'action') {
                       return (
                         <TableCell key={column.id} align={column.align}>
-                          <Button variant="outlined" size="small" onClick={() => handleOpenDialog(row)}>
-                            Cập nhật trạng thái
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={row.status !== WithdrawStatusEnum.PENDING}
+                            onClick={() => handleOpenDialog(row)}
+                          >
+                            <BorderColorIcon />
                           </Button>
                         </TableCell>
                       );
                     }
-                    let value = row[column.id as keyof WithdrawHistoryFormData];
+                    let value: any = row[column.id as keyof WithdrawHistoryFormData];
                     if (column.id === 'userID') {
-                      value = row.userID || 'N/A';
+                      value = row.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
-                      value = row.adminID || 'N/A';
+                      value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'bank') {
-                      value = row.bank.bankName || 'N/A';
+                      value = row.bank?.bankName || 'N/A';
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>

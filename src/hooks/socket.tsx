@@ -10,7 +10,6 @@ export const useSocket = () => {
 
   useEffect(() => {
     if (!accessToken) return;
-    console.log('access=>>>>>: ', accessToken);
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket'],

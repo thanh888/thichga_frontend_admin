@@ -79,7 +79,7 @@ export function BetSessionComponent({ isReload, setIsReload }: Readonly<Props>):
   const fetchSessions = async () => {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.code}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
       const response = await paginateBetSessionApi(id, query); // Assumed adapted for bet sessions
       if (response.status === 200 || response.status === 201) {
         setSessions(response.data);

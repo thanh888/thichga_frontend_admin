@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { UpdateOdds } from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
+import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
@@ -21,7 +22,7 @@ interface OddsFormData {
   redOdds: string;
   blueOdds: string;
 }
-export default function SampleOdds({ data }: { data: any }) {
+export default function SampleOdds({ data }: { data: BettingRoomInterface }) {
   const params = useParams<{ id: string }>();
   const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
 
@@ -45,10 +46,41 @@ export default function SampleOdds({ data }: { data: any }) {
 
   useEffect(() => {
     setFormData({
-      redOdds: data?.redOdds || 10,
-      blueOdds: data?.blueOdds || 10,
+      redOdds: data?.redOdds?.toString() || '10',
+      blueOdds: data?.blueOdds?.toString() || '10',
     });
   }, [data]);
+
+  const [seconds, setSeconds] = useState();
+
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+
+  useEffect(() => {
+    if (!data?.isAcceptBetting) return;
+
+    const now = Date.now();
+    const endTime = new Date(data.endingAt || 0).getTime();
+    const initialSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+    setSecondsLeft(initialSeconds);
+
+    const intervalId = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [data?.endingAt, data?.isAcceptBetting]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   return (
     <>
@@ -128,7 +160,7 @@ export default function SampleOdds({ data }: { data: any }) {
           gutterBottom
           sx={{ border: '1px solid red', borderRadius: 1, padding: '2px', color: 'red', marginLeft: 1 }}
         >
-          99999
+          {formatTime(secondsLeft)}
         </Typography>
       </Box>
     </>

@@ -26,6 +26,8 @@ export interface BettingRoomInterface {
   isAcceptBetting?: boolean;
 
   secondsEnding?: number;
+  endingAt?: string;
+
   latestSessionID?: string;
 
   // Timestamp when the betting room was created
