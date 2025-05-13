@@ -42,7 +42,7 @@ export default function DetailRoom() {
     <>
       {room && <EditRoom data={room} setIsReload={setIsReload} />}
 
-      <SampleOdds data={room} />
+      <SampleOdds data={room} setData={setRoom} />
 
       {room?.typeRoom === TypeBetRoomEnum.NORMAL && room?.latestSessionID && <BetOptionComponent room={room} />}
 

@@ -95,10 +95,10 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   }, [data]);
 
   React.useEffect(() => {
-    if (data?.isOpened) {
+    if (data?.isAcceptBetting) {
       // gets session isOpened ==== true
     }
-  }, [data?.isOpened]);
+  }, [data?.isAcceptBetting]);
 
   const handleChange = (
     event:

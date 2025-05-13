@@ -277,7 +277,7 @@ export function BetHistoryComponent({ isReload, sessionID, room }: Readonly<Prop
                     {row?.selectedTeam === TeamEnum.BLUE ? room.blueName : room.redName}
                   </Typography>
                 </TableCell>
-                <TableCell>{row?.matchedUserId?.username}</TableCell>
+                <TableCell>{row?.matchedUserId?.username ?? row?.betOptionID?.code}</TableCell>
                 <TableCell>
                   <Typography
                     variant="caption"

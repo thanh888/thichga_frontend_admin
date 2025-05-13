@@ -42,7 +42,7 @@ export interface BettingHistoryInterface {
   code?: string;
 
   // ID of the associated bet option
-  betOptionID?: string;
+  betOptionID?: any;
 
   // Result of the bet (e.g., WIN, LOSS)
   result?: BetResultEnum;

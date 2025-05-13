@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { UpdateOdds } from '@/services/dashboard/bet-room.api';
+import { CloseSession, EnableBetting, UpdateOdds } from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
@@ -22,7 +22,13 @@ interface OddsFormData {
   redOdds: string;
   blueOdds: string;
 }
-export default function SampleOdds({ data }: { data: BettingRoomInterface }) {
+export default function SampleOdds({
+  data,
+  setData,
+}: {
+  data: BettingRoomInterface;
+  setData: React.Dispatch<React.SetStateAction<BettingRoomInterface>>;
+}) {
   const params = useParams<{ id: string }>();
   const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
 
@@ -56,17 +62,22 @@ export default function SampleOdds({ data }: { data: BettingRoomInterface }) {
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
   useEffect(() => {
-    if (!data?.isAcceptBetting) return;
+    if (!data?.isAcceptBetting) {
+      setSecondsLeft(0);
+      return;
+    }
 
     const now = Date.now();
     const endTime = new Date(data.endingAt || 0).getTime();
     const initialSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+
     setSecondsLeft(initialSeconds);
 
     const intervalId = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalId);
+          handleToggleBetting();
           return 0;
         }
         return prev - 1;
@@ -80,6 +91,26 @@ export default function SampleOdds({ data }: { data: BettingRoomInterface }) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const handleToggleBetting = async () => {
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('isAcceptBetting', String(!data.isAcceptBetting));
+      formDataToSend.append('secondsEnding', String(data.secondsEnding));
+      formDataToSend.append('latestSessionID', String(data.latestSessionID));
+      const response = await EnableBetting(id, formDataToSend);
+      if (response.status === 200 || response.status === 201) {
+        setData((prev) => (prev ? { ...prev, isAcceptBetting: false } : prev));
+        // setIsReload(true);
+        toast.success(`Đã đóng cược`);
+      } else {
+        toast.error('Cập nhật trạng thái cược thất bại');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    }
   };
 
   return (
@@ -160,7 +191,7 @@ export default function SampleOdds({ data }: { data: BettingRoomInterface }) {
           gutterBottom
           sx={{ border: '1px solid red', borderRadius: 1, padding: '2px', color: 'red', marginLeft: 1 }}
         >
-          {formatTime(secondsLeft)}
+          {secondsLeft > 0 ? formatTime(secondsLeft) : 'Hết thời gian cược'}
         </Typography>
       </Box>
     </>

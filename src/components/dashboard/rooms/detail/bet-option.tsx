@@ -33,6 +33,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 
+import { useSocket } from '@/hooks/socket';
 import { useUser } from '@/hooks/use-user';
 
 // Định nghĩa interface cho dữ liệu bảng
@@ -60,13 +61,9 @@ const columns: Column[] = [
   // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-interface Props {
-  isReload: boolean;
-  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
 export function BetOptionComponent({ room }: { room: BettingRoomInterface }): React.JSX.Element {
   const [isReload, setIsReload] = React.useState<boolean>(true);
+  const socket = useSocket();
 
   const [bets, setBets] = React.useState<BetData[]>([]);
   const [openModal, setOpenModal] = React.useState(false);
@@ -76,16 +73,14 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
     selectedTeam: '',
   });
 
-  const router = useRouter();
-
   const oddsOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 
-  const fetchBets = async () => {
-    if (!room.latestSessionID) {
+  const fetchBets = async (session_id: string) => {
+    if (!session_id) {
       return;
     }
     try {
-      const response = await paginateOptionBySessionApi(room.latestSessionID);
+      const response = await paginateOptionBySessionApi(session_id);
       if (response.status === 200 || response.status === 201) {
         // Transform creatorID and matchedUserId to usernames (if needed)
         setBets(response.data);
@@ -99,11 +94,11 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
   };
 
   React.useEffect(() => {
-    if (isReload) {
-      fetchBets();
+    if (isReload && room.latestSessionID) {
+      fetchBets(room.latestSessionID);
       setIsReload(false);
     }
-  }, [isReload]);
+  }, [isReload, room.latestSessionID]);
 
   const { user } = useUser();
 
@@ -146,6 +141,12 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
       if (response.status === 201 || response.status === 200) {
         setIsReload(true); // Trigger table refresh
         toast.success('Tạo thành công');
+
+        if (socket) {
+          socket.emit('bet-option', {
+            roomID: room._id,
+          });
+        }
       } else {
         console.error('Failed to save bet:', response.statusText);
       }
@@ -153,10 +154,6 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
     } catch (error) {
       console.error('Error submitting form:', error);
     }
-  };
-
-  const handleViewDetail = (code: string) => {
-    router.push(`/bets/${code}`);
   };
 
   return (

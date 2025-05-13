@@ -3,6 +3,7 @@ import { UrlTypeEnum } from '../enum/url-type.enum';
 
 // Interface for the BettingRoom document
 export interface BettingRoomInterface {
+  _id?: string;
   roomName?: string;
   thumbnail?: string;
   urlLive?: string;
@@ -26,7 +27,7 @@ export interface BettingRoomInterface {
   isAcceptBetting?: boolean;
 
   secondsEnding?: number;
-  endingAt?: string;
+  endingAt?: Date;
 
   latestSessionID?: string;
 
