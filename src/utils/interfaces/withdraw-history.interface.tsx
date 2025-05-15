@@ -3,6 +3,7 @@ import { BankInteface } from './bank.interface';
 
 // Interface for the WithdrawTransaction document
 export interface WithdrawTransactionInterface {
+  _id: string;
   // ID of the user who initiated the withdrawal
   userID?: any;
 

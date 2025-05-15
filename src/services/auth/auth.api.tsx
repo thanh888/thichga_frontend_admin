@@ -2,11 +2,11 @@ import axiosCustomize from '@/utils/axios/axios.customize';
 
 export const signInApi = async (formData: any) => {
   try {
-    const res = await axiosCustomize.post(`/auth/sign-in`, formData);
+    const res = await axiosCustomize.post(`/auth/sign-in-admin`, formData);
 
     return res;
   } catch (error: any) {
-    throw new Error(error?.response?.data?.message || 'Lỗi kết nối đến server');
+    return error;
   }
 };
 
@@ -25,7 +25,7 @@ export const getAccoutUserApi = async () => {
 
 export const SignOutApi = async () => {
   try {
-    await axiosCustomize.get(`/auth/sign-out`);
+    await axiosCustomize.post(`/auth/sign-out`);
     return true;
   } catch (error) {
     return error;

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { updateWithdrawStatusApi } from '@/services/dashboard/withdraw-history.api';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import { ConvertMoneyVND } from '@/utils/functions/default-function';
+import { WithdrawTransactionInterface } from '@/utils/interfaces/withdraw-history.interface';
 import {
   Button,
   Dialog,
@@ -22,7 +23,7 @@ import { useSocket } from '@/hooks/socket';
 
 interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
-  openDialog: any;
+  openDialog: WithdrawTransactionInterface | null;
   setOpenDialog: React.Dispatch<React.SetStateAction<any>>;
 }
 
@@ -37,6 +38,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
   const [feedback, setFeedback] = React.useState<string>('');
 
   const user = useContext(UserContext)?.user;
+  const socket = useSocket();
 
   // Close dialog
   const handleCloseDialog = () => {
@@ -53,13 +55,15 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
 
   // Handle status update
   const handleUpdateStatus = async () => {
-    if (!newStatus || newStatus === openDialog.status) {
+    if (!newStatus || newStatus === openDialog?.status) {
       toast.warning('Vui lòng chọn trạng thái');
       return;
     }
-    console.log(openDialog);
 
     try {
+      if (!openDialog?._id) {
+        return;
+      }
       const formData = {
         adminID: user._id,
         status: newStatus,
@@ -69,6 +73,16 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật trạng thái thành công');
         setIsReload(true); // Trigger refresh
+
+        if (socket) {
+          socket.emit('withdraw-money', {
+            userID: openDialog.userID._id,
+            status: formData.status,
+            money: openDialog?.money,
+          });
+
+          socket.off('withdraw-money');
+        }
       } else {
         toast.error('Cập nhật trạng thái thất bại');
       }
@@ -82,7 +96,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
 
   return (
     <Dialog
-      open={openDialog}
+      open={!!openDialog}
       onClose={handleCloseDialog}
       aria-labelledby="status-dialog-title"
       aria-describedby="status-dialog-description"

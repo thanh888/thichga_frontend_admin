@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography';
 import { Eye as EyeIcon } from '@phosphor-icons/react/dist/ssr/Eye';
 import { EyeSlash as EyeSlashIcon } from '@phosphor-icons/react/dist/ssr/EyeSlash';
 import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
 import { z as zod } from 'zod';
 
 import { paths } from '@/paths';
@@ -56,16 +57,23 @@ export function SignInForm(): React.JSX.Element {
 
   const onSubmit = async (data: Values) => {
     try {
-      const res = await signInApi(data);
+      const res = (await signInApi(data)) as any;
+      console.log(res);
+
       if (res.status === 200 || res.status === 201) {
         localStorage.setItem('account', res.data.accessToken);
         if (checkSession) {
           await checkSession(); // Call checkSession to update user state
         }
         router.push('/');
+      } else if (res?.response?.data?.message === 'Username or password is incorrect') {
+        toast.error('Tài khoản hoặc mật khẩu không đúng');
       }
     } catch (error: any) {
       console.error('Login failed:', error);
+      if (error?.response?.data?.message === 'Username or password is incorrect') {
+        toast.error('Tài khoản hoặc mật khẩu không đúng');
+      }
     }
   };
 

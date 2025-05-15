@@ -143,7 +143,7 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
         toast.success('Tạo thành công');
 
         if (socket) {
-          socket.emit('bet-option', {
+          socket.emit('update-option', {
             roomID: room._id,
           });
         }

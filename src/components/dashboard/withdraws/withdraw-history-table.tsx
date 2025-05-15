@@ -78,7 +78,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     docs: [],
     totalDocs: 0,
   });
-  const [openDialog, setOpenDialog] = React.useState<any>(null);
+  const [openDialog, setOpenDialog] = React.useState<any | null>(null);
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',

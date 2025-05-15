@@ -25,11 +25,13 @@ export interface UserPopoverProps {
 
 export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): React.JSX.Element {
   const { checkSession } = useUser();
+  const { user } = useUser();
 
   const router = useRouter();
 
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     try {
+      localStorage.removeItem('account');
       const response = await SignOutApi();
       if (response) {
         if (checkSession) {
@@ -52,10 +54,10 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
       slotProps={{ paper: { sx: { width: '240px' } } }}
     >
       <Box sx={{ p: '16px 20px ' }}>
-        <Typography variant="subtitle1">Sofia Rivers</Typography>
-        <Typography color="text.secondary" variant="body2">
+        <Typography variant="subtitle1">{user?.username}</Typography>
+        {/* <Typography color="text.secondary" variant="body2">
           sofia.rivers@devias.io
-        </Typography>
+        </Typography> */}
       </Box>
       <Divider />
       <MenuList disablePadding sx={{ p: '8px', '& .MuiMenuItem-root': { borderRadius: 1 } }}>

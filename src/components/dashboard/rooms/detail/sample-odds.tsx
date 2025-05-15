@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 
+import { useSocket } from '@/hooks/socket';
+
 interface OddsFormData {
   redOdds: string;
   blueOdds: string;
@@ -39,6 +41,7 @@ export default function SampleOdds({
       setFormData((prev: any) => ({ ...prev, [event.target.name]: event.target.value }));
     }
   };
+
   const handleUpdateOdds = async () => {
     try {
       const response = await UpdateOdds(id, formData);
