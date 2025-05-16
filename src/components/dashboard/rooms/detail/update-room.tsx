@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   CloseSession,
+  DisableBetting,
   EnableBetting,
   getOneBetroomId,
   OpenSession,
@@ -245,6 +246,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       const response = await CloseSession(id, {
         latestSessionID: formData.latestSessionID,
         winner: selectedWinner,
+        fee: formData.fee,
       });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
@@ -269,11 +271,11 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
     }
   };
 
-  const handleToggleBetting = async () => {
+  const handleEnableBetting = async () => {
     if (!formData) return;
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('isAcceptBetting', String(!formData.isAcceptBetting));
+      formDataToSend.append('isAcceptBetting', String(true));
       formDataToSend.append('secondsEnding', String(formData.secondsEnding));
       formDataToSend.append('latestSessionID', String(formData.latestSessionID));
       const response = await EnableBetting(id, formDataToSend);
@@ -281,6 +283,27 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
         setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
         setIsReload(true);
         toast.success(`Đã ${formData.isAcceptBetting ? 'đóng' : 'mở'} cược`);
+      } else {
+        toast.error('Cập nhật trạng thái cược thất bại');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+    }
+  };
+
+  const handleDisableBetting = async () => {
+    if (!formData) return;
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('isAcceptBetting', String(false));
+      formDataToSend.append('latestSessionID', String(formData.latestSessionID));
+
+      const response = await DisableBetting(id, formDataToSend);
+      if (response.status === 200 || response.status === 201) {
+        setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
+        setIsReload(true);
+        toast.success(`Đã đóng cược`);
       } else {
         toast.error('Cập nhật trạng thái cược thất bại');
       }
@@ -512,7 +535,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
                 {'Mở phiên'}
               </Button>
             ) : formData.isAcceptBetting ? (
-              <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'error'}>
+              <Button onClick={handleDisableBetting} variant="outlined" sx={{ width: '100%' }} color={'error'}>
                 {'Đóng cược'}
               </Button>
             ) : (
@@ -520,7 +543,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
                 <Button onClick={handleCloseSession} variant="contained" sx={{ width: '100%' }} color={'error'}>
                   {'Đóng phiên'}
                 </Button>
-                <Button onClick={handleToggleBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
+                <Button onClick={handleEnableBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
                   {'Mở cược'}
                 </Button>
               </>

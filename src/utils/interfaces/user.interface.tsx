@@ -15,7 +15,7 @@ export interface UserInterface {
   ipv6?: string;
   status?: UserStatus | string;
   referral_code?: string;
-  referral_receiver_id?: string; // ID của người giới thiệu
+  referral_receiver_id?: any; // ID của người giới thiệu
   device_id?: string;
   role?: RoleUsers | string;
   bank?: BankInteface;

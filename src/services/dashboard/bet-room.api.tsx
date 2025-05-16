@@ -24,6 +24,11 @@ export const EnableBetting = async (id: string, body: any) => {
   return res;
 };
 
+export const DisableBetting = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/bet-room/${id}/disable-betting`, body);
+  return res;
+};
+
 export const UpdateOdds = async (id: string, body: any) => {
   const res = await axiosCustomize.put(`/bet-room/${id}/odds`, body);
   return res;

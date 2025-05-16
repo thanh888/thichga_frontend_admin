@@ -52,4 +52,14 @@ export interface BettingHistoryInterface {
 
   // Timestamp when the bet history was last updated
   updatedAt?: Date;
+
+  userResult?: BetResultEnum;
+
+  systemProfit?: number;
+
+  userProfit?: number;
+
+  systemRevenue?: number;
+
+  userRevenue?: number;
 }

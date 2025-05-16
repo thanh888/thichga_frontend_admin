@@ -60,8 +60,6 @@ export default function SampleOdds({
     });
   }, [data]);
 
-  const [seconds, setSeconds] = useState();
-
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
   useEffect(() => {
@@ -80,7 +78,9 @@ export default function SampleOdds({
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalId);
-          handleToggleBetting();
+          setData((prev) => (prev ? { ...prev, isAcceptBetting: false } : prev));
+
+          // handleToggleBetting();
           return 0;
         }
         return prev - 1;

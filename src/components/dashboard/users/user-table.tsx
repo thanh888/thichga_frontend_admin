@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { getListReferralBy, paginateUserApi } from '@/services/dashboard/user.api';
+import { convertDateTime } from '@/utils/functions/default-function';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
@@ -44,7 +46,7 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const [filter, setFilter] = React.useState({ username: '' });
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('username');
-  const [openEdit, setOpenEdit] = React.useState<UserFormData | null>(null);
+  const [openEdit, setOpenEdit] = React.useState<UserInterface | null>(null);
 
   const [listReferralBys, setListReferralBys] = React.useState<any[]>([]);
 
@@ -166,16 +168,16 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
             </TableRow>
           </TableHead>
           <TableBody>
-            {accounts?.docs.map((row: UserFormData) => (
+            {accounts?.docs.map((row: UserInterface) => (
               <TableRow hover key={row._id}>
                 <TableCell>
                   <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                    <Typography variant="subtitle2">{row.username}</Typography>
+                    <Typography variant="subtitle2">{row?.username}</Typography>
                   </Stack>
                 </TableCell>
-                <TableCell>{row.status}</TableCell>
-                <TableCell>{row.referrer}</TableCell>
-                <TableCell>{row.createdAt}</TableCell>
+                <TableCell>{row?.status}</TableCell>
+                <TableCell>{row?.referral_receiver_id?.username}</TableCell>
+                <TableCell>{convertDateTime(row?.createdAt?.toString() ?? '')}</TableCell>
                 <TableCell>
                   <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
                     <DriveFileRenameOutlineIcon />

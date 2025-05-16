@@ -93,7 +93,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
         pin: openEdit?.pin ?? '',
         money: openEdit?.money ?? '',
         status: openEdit?.status ?? UserStatus.ACTIVE,
-        referral_receiver_id: openEdit?.referral_receiver_id ?? '',
+        referral_receiver_id: openEdit?.referral_receiver_id._id ?? '',
       });
     }
   }, [openEdit]);
@@ -246,14 +246,8 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
             </Grid>
             <Grid item md={6} xs={12}>
               <FormControl fullWidth>
-                <InputLabel>SỐ TÀI KHOẢN</InputLabel>
-                <DisabledInput
-                  label="SỐ TÀI KHOẢN"
-                  name="money"
-                  value={formData.money}
-                  onChange={handleChange}
-                  disabled
-                />
+                <InputLabel>SỐ DƯ</InputLabel>
+                <DisabledInput label="SỐ DƯ" name="money" value={formData.money} onChange={handleChange} />
               </FormControl>
             </Grid>
             <Grid item md={6} xs={12}>

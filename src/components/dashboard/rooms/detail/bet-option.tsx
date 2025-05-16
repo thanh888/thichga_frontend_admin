@@ -100,6 +100,12 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
     }
   }, [isReload, room.latestSessionID]);
 
+  React.useEffect(() => {
+    if (room.latestSessionID) {
+      fetchBets(room.latestSessionID);
+    }
+  }, [room.latestSessionID]);
+
   const { user } = useUser();
 
   const handleOpenModal = () => {
