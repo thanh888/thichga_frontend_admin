@@ -1,9 +1,8 @@
 'use client';
 
-import * as React from 'react'; // Assumed room-specific API
-
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
+import { deleteRoomById, paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -11,6 +10,11 @@ import {
   Box,
   Button,
   Card,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   FormControl,
   InputLabel,
@@ -28,6 +32,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
 
 export interface RoomFormData {
   _id: string;
@@ -50,6 +55,8 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const [filter, setFilter] = React.useState({ roomName: '', typeRoom: '', isOpened: '' });
   const [order, setOrder] = React.useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = React.useState<keyof RoomFormData>('createdAt');
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
+  const [roomToDelete, setRoomToDelete] = React.useState<RoomFormData | null>(null);
 
   const router = useRouter();
 
@@ -57,14 +64,40 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.roomName}&typeRoom=${filter.typeRoom}&isOpened=${filter.isOpened}&sort=${sortQuery}`;
-      const response = await paginateBetRoomApi(query); // Assumed room-specific API
-
+      const response = await paginateBetRoomApi(query);
       if (response.status === 200 || response.status === 201) {
         setRooms(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch rooms:', error);
     }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!roomToDelete) return;
+    try {
+      const response = await deleteRoomById(roomToDelete._id);
+      if (response.status === 200 || response.status === 204) {
+        fetchRooms(); // Refresh the table
+        setDeleteDialogOpen(false);
+        setRoomToDelete(null);
+        toast.success('Xóa thành công');
+      } else {
+        toast.error('Không thể xóa phòng, vui lòng thử lại');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete room:', err);
+    }
+  };
+
+  const handleOpenDeleteDialog = (room: RoomFormData) => {
+    setRoomToDelete(room);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setRoomToDelete(null);
   };
 
   React.useEffect(() => {
@@ -194,6 +227,7 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
                   <Typography
                     variant="caption"
                     bgcolor={row.isAcceptBetting ? '#1de9b6' : '#e57373'}
+                    noWrap
                     sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                   >
                     {row.isAcceptBetting ? 'Cho phép' : 'Không cho phép'}
@@ -212,7 +246,7 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
                   {/* <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
                     <DriveFileRenameOutlineIcon />
                   </Button> */}
-                  <Button variant="contained" color="error">
+                  <Button variant="contained" color="error" onClick={() => handleOpenDeleteDialog(row)}>
                     <DeleteOutlineOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -231,6 +265,27 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
       />
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Xác nhận xóa phòng</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Bạn có chắc chắn muốn xóa phòng "{roomToDelete?.roomName}"? Hành động này không thể hoàn tác.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleDeleteRoom} color="error" autoFocus>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

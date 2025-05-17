@@ -2,6 +2,7 @@ import { TeamEnum } from '../enum/team.enum';
 
 // Interface for the BettingSession document
 export interface BettingSessionInterface {
+  _id: string;
   // ID of the betting room associated with this session
   betRoomID?: string;
 

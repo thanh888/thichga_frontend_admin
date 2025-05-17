@@ -24,3 +24,8 @@ export const getListReferralBy = async () => {
   const res = await axiosCustomize.get(`/user/referrals`);
   return res;
 };
+
+export const deleteUserById = async (id: string) => {
+  const res = await axiosCustomize.delete(`/user/${id}/delete-soft`);
+  return res;
+};

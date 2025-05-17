@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api'; // Assumed adapted for bet sessions
 
 import { paginateBetSessionApi } from '@/services/dashboard/bet-session.api';
+import { convertDateTime } from '@/utils/functions/default-function';
+import { BettingSessionInterface } from '@/utils/interfaces/bet-sesion.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
   Box,
@@ -27,6 +29,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+
+import { paths } from '@/paths';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface Betsession {
@@ -123,8 +127,8 @@ export function BetSessionComponent({ isReload, setIsReload }: Readonly<Props>):
     setPage(0); // Reset to first page
   };
 
-  const handleViewDetail = (code: string) => {
-    router.push(`/sessions/${code}`); // Navigate to session detail page
+  const handleViewDetail = (id: string) => {
+    router.push(`${paths.dashboard.sessions}/${id}`); // Navigate to session detail page
   };
 
   const handleDelete = (code: string) => {
@@ -174,7 +178,7 @@ export function BetSessionComponent({ isReload, setIsReload }: Readonly<Props>):
             </TableRow>
           </TableHead>
           <TableBody>
-            {sessions?.docs?.map((row: Betsession) => (
+            {sessions?.docs?.map((row: BettingSessionInterface) => (
               <TableRow hover key={row.code}>
                 <TableCell>
                   <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
@@ -190,12 +194,12 @@ export function BetSessionComponent({ isReload, setIsReload }: Readonly<Props>):
                     {row.isOpened ? 'Mở' : 'Đóng'}
                   </Typography>
                 </TableCell>
-                <TableCell>{new Date(row.createdAt).toLocaleString()}</TableCell>
+                <TableCell>{convertDateTime(row?.createdAt?.toString() ?? '')}</TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'revenue')?.format?.(row.revenue) || row.revenue}
+                  {columns.find((col) => col.id === 'revenue')?.format?.(row?.revenue?.toString() ?? '')}
                 </TableCell>
                 <TableCell align="center">
-                  <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleViewDetail(row.code)}>
+                  <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleViewDetail(row._id)}>
                     Chi tiết
                   </Button>
                 </TableCell>

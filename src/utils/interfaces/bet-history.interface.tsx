@@ -45,7 +45,6 @@ export interface BettingHistoryInterface {
   betOptionID?: any;
 
   // Result of the bet (e.g., WIN, LOSS)
-  result?: BetResultEnum;
 
   // Timestamp when the bet history was created
   createdAt?: Date;

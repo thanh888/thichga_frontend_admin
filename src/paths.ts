@@ -8,6 +8,7 @@ export const paths = {
     admin_account: '/dashboard/admins',
     user_account: '/dashboard/users',
     bet_room: '/dashboard/rooms',
+    sessions: '/dashboard/sessions',
     deposit_mode: '/dashboard/deposit-mode',
     deposits: '/dashboard/deposits',
     auto_deposits: '/dashboard/auto-deposit',

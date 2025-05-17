@@ -50,7 +50,3 @@ export default function RoomsPage(): React.JSX.Element {
     </Stack>
   );
 }
-
-function applyPagination(rows: RoomFormData[], page: number, rowsPerPage: number): RoomFormData[] {
-  return rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-}

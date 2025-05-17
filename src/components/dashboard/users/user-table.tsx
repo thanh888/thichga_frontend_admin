@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { getListReferralBy, paginateUserApi } from '@/services/dashboard/user.api';
+import { deleteUserById, getListReferralBy, paginateUserApi } from '@/services/dashboard/user.api';
 import { convertDateTime } from '@/utils/functions/default-function';
 import { UserInterface } from '@/utils/interfaces/user.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
@@ -10,6 +10,11 @@ import {
   Box,
   Button,
   Card,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   SelectChangeEvent,
   Stack,
@@ -23,6 +28,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
 
 import EditUser from './update-user.dialog';
 
@@ -47,7 +53,8 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('username');
   const [openEdit, setOpenEdit] = React.useState<UserInterface | null>(null);
-
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = React.useState<UserInterface | null>(null);
   const [listReferralBys, setListReferralBys] = React.useState<any[]>([]);
 
   const fetchAccounts = async () => {
@@ -55,13 +62,40 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.username}&sort=${sortQuery}`;
       const response = await paginateUserApi(query);
-
       if (response.status === 200 || response.status === 201) {
         setAccounts(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch accounts:', error);
     }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete?._id) return;
+    try {
+      const response = await deleteUserById(userToDelete._id);
+      if (response.status === 200 || response.status === 204) {
+        fetchAccounts(); // Refresh the table
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+        toast.success('Xóa người dùng thành công');
+      } else {
+        toast.error('Không thể xóa người dùng, vui lòng thử lại');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      alert(err.response?.data?.message || 'Không thể xóa người dùng, vui lòng thử lại');
+    }
+  };
+
+  const handleOpenDeleteDialog = (user: UserInterface) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
   };
 
   React.useEffect(() => {
@@ -82,7 +116,6 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
         console.error('Error fetching referral list:', error);
       }
     };
-
     fetchData();
   }, []);
 
@@ -188,7 +221,7 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
                   <Button variant="contained" color="success" sx={{ mr: 1 }}>
                     Chuyển & Rút tiền
                   </Button>
-                  <Button variant="contained" color="error">
+                  <Button variant="contained" color="error" onClick={() => handleOpenDeleteDialog(row)}>
                     <DeleteOutlineOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -213,6 +246,27 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
         setIsReload={setIsReload}
         listReferralBys={listReferralBys}
       />
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Xác nhận xóa người dùng</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Bạn có chắc chắn muốn xóa người dùng "{userToDelete?.username}"? Hành động này không thể hoàn tác.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleDeleteUser} color="error" autoFocus>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

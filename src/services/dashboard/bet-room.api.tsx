@@ -44,6 +44,11 @@ export const getOneBetroomId = async (id: string) => {
   return res;
 };
 
+export const deleteRoomById = async (id: string) => {
+  const res = await axiosCustomize.delete(`/bet-room/${id}`);
+  return res;
+};
+
 export const uploadImageApi = async (file: any) => {
   const res = await axiosCustomize.post(
     `/upload/file`,

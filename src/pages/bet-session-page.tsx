@@ -1,11 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
 import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
+import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
-import { convertDateTime, listStatusHistory } from '@/utils/functions/default-function';
+import {
+  convertDateTime,
+  ConvertMoneyVND,
+  listResultHistory,
+  listStatusHistory,
+} from '@/utils/functions/default-function';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
@@ -57,8 +63,9 @@ const columns: Column[] = [
     align: 'right',
   },
   { id: 'selectedTeam', label: 'Đội chọn', minWidth: 150, align: 'left' },
-  { id: 'userProfit', label: 'Khớp kèo', minWidth: 120, align: 'left' },
-  { id: 'result', label: 'Kết quả', minWidth: 150, align: 'left' },
+  { id: 'userResult', label: 'Trạng thái', minWidth: 150, align: 'left' },
+  { id: 'systemProfit', label: 'Kết quả', minWidth: 120, align: 'left' },
+  { id: 'systemRevenue', label: 'Doanh thu', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Thời gian', minWidth: 120, align: 'center' },
 ];
 
@@ -73,14 +80,19 @@ export default function SessionDetailPage(): React.JSX.Element {
   const [error, setError] = React.useState<string>('');
 
   const router = useRouter();
+  const param = useParams();
+  const sessionID = param?.id.toString();
 
   const fetchBets = async () => {
     setIsLoading(true);
     setError('');
     try {
+      if (!sessionID) {
+        return;
+      }
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&status=${filter.status}&sort=${sortQuery}`;
-      const response = await paginateBetHistoryApi('', query);
+      const response = await paginateBetHistoryApi(sessionID, query);
       if (response.status === 200 || response.status === 201) {
         setBets(response.data);
       } else {
@@ -95,12 +107,6 @@ export default function SessionDetailPage(): React.JSX.Element {
       setIsLoading(false);
     }
   };
-
-  React.useEffect(() => {
-    if (isReload) {
-      fetchBets();
-    }
-  }, [isReload]);
 
   React.useEffect(() => {
     fetchBets();
@@ -152,18 +158,18 @@ export default function SessionDetailPage(): React.JSX.Element {
     );
   }
 
-  if (!bets?.docs?.length) {
-    return (
-      <Card sx={{ p: 2, textAlign: 'center' }}>
-        <Typography>Không có cược nào để hiển thị</Typography>
-      </Card>
-    );
-  }
+  // if (!bets?.docs?.length) {
+  //   return (
+  //     <Card sx={{ p: 2, textAlign: 'center' }}>
+  //       <Typography>Không có cược nào để hiển thị</Typography>
+  //     </Card>
+  //   );
+  // }
 
   return (
     <Card>
       <Typography variant="h5" sx={{ marginTop: 1, marginLeft: 1 }}>
-        Lịch sử cược
+        Kết quả phiên #${sessionID}
       </Typography>
       <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <TextField
@@ -205,7 +211,7 @@ export default function SessionDetailPage(): React.JSX.Element {
           </TableHead>
           <TableBody>
             {bets?.docs?.map((row: BettingHistoryInterface) => (
-              <TableRow hover key={row?._id} onClick={() => handleViewDetail(row?._id)}>
+              <TableRow hover key={row?._id}>
                 <TableCell>
                   <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
                     <Typography variant="subtitle2">{row?.code}</Typography>
@@ -224,19 +230,20 @@ export default function SessionDetailPage(): React.JSX.Element {
                     bgcolor={row?.selectedTeam === TeamEnum.BLUE ? '#33bfff' : '#e57373'}
                     sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 14 }}
                   >
-                    {row?.selectedTeam === TeamEnum.BLUE ? room.blueName : room.redName}
+                    {row?.selectedTeam === TeamEnum.BLUE ? 'Gà xanh' : 'Gà đỏ'}
                   </Typography>
                 </TableCell>
-                <TableCell>{row?.userProfit}</TableCell>
                 <TableCell>
                   <Typography
                     variant="caption"
                     bgcolor={row?.status === BetHistoryStatusEnum.MATCHED ? '#1de9b6' : '#e57373'}
                     sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 14 }}
                   >
-                    {listStatusHistory.find((item) => item.value === row.status)?.label || ''}
+                    {listResultHistory.find((item) => item.value === row.userResult)?.label || ''}
                   </Typography>
                 </TableCell>
+                <TableCell>{ConvertMoneyVND(row.userProfit ?? 0)}</TableCell>
+                <TableCell>{ConvertMoneyVND(row?.systemRevenue ?? 0)} </TableCell>
                 <TableCell>{convertDateTime(row?.createdAt?.toString() || '')}</TableCell>
               </TableRow>
             ))}
