@@ -6,6 +6,7 @@ export const navItems = [
   { key: 'admin_account', title: 'Tài khoản admin', href: paths.dashboard.admin_account, icon: 'admins' },
   { key: 'user_account', title: 'Người dùng', href: paths.dashboard.user_account, icon: 'users' },
   { key: 'bet_room', title: 'Quản lý cược', href: paths.dashboard.bet_room, icon: 'rooms' },
+  { key: 'other_room', title: 'Quản lý cược gà đòn', href: paths.dashboard.other_room, icon: 'rooms' },
   { key: 'deposit_mode', title: 'Chế độ nạp', href: paths.dashboard.deposit_mode, icon: 'modes' },
   // { key: 'sessions', title: 'Phiên cược', href: paths.dashboard.sessions, icon: 'modes' },
   { key: 'deposits', title: 'Đơn nạp tiền', href: paths.dashboard.deposits, icon: 'deposits' },

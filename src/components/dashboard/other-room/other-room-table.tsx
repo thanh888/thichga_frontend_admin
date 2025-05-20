@@ -2,7 +2,12 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteRoomById, deleteSoftRoomById, paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
+import {
+  deleteRoomById,
+  deleteSoftRoomById,
+  paginateBetRoomApi,
+  paginateOtherBetRoomApi,
+} from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
@@ -48,7 +53,7 @@ interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
+export function OtherRoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
   const [rooms, setRooms] = React.useState<any>(null);
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
@@ -64,7 +69,7 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.roomName}&typeRoom=${filter.typeRoom}&isOpened=${filter.isOpened}&sort=${sortQuery}&isDeleted=false`;
-      const response = await paginateBetRoomApi(query);
+      const response = await paginateOtherBetRoomApi(query);
       if (response.status === 200 || response.status === 201) {
         setRooms(response.data);
       }
@@ -144,14 +149,6 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
           onChange={handleFilterChange}
           size="small"
         />
-        <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>Loại phòng</InputLabel>
-          <Select label="Loại phòng" name="typeRoom" value={filter.typeRoom} onChange={handleFilterChange}>
-            <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value={TypeBetRoomEnum.NORMAL}>Truyền thống</MenuItem>
-            <MenuItem value={TypeBetRoomEnum.SOLO}>Đối kháng</MenuItem>
-          </Select>
-        </FormControl>
         <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>Trạng thái phòng</InputLabel>
           <Select label="Trạng thái phòng" name="isOpened" value={filter.isOpened} onChange={handleFilterChange}>
@@ -239,7 +236,7 @@ export function RoomsTable({ isReload, setIsReload }: Readonly<Props>): React.JS
                     variant="contained"
                     color="success"
                     sx={{ mr: 1 }}
-                    onClick={() => router.push(`rooms/${row._id}`)}
+                    onClick={() => router.push(`other-room/${row._id}`)}
                   >
                     Chi tiết
                   </Button>
