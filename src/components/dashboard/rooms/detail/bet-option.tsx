@@ -148,6 +148,8 @@ export function BetOptionComponent({ room }: { room: BettingRoomInterface }): Re
         setIsReload(true); // Trigger table refresh
         toast.success('Tạo thành công');
 
+        console.log(socket);
+
         if (socket) {
           socket.emit('update-option', {
             roomID: room._id,

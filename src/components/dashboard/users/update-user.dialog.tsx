@@ -93,7 +93,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
         pin: openEdit?.pin ?? '',
         money: openEdit?.money ?? '',
         status: openEdit?.status ?? UserStatus.ACTIVE,
-        referral_receiver_id: openEdit?.referral_receiver_id._id ?? '',
+        referral_receiver_id: openEdit?.referral_receiver_id?._id ?? '',
       });
     }
   }, [openEdit]);

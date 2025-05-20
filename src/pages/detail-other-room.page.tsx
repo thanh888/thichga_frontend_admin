@@ -41,10 +41,10 @@ export default function DetailOtherRoomPage() {
   return (
     <Box sx={{ width: '100%' }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={5}>
           {room && <UpdateOtherRoom data={room} setIsReload={setIsReload} />}
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={7}>
           {room?.latestSessionID && <BetOptionOtherComponent room={room} />}
 
           {room?.latestSessionID && <BetSesionOtherComponent isReload={isReload} setIsReload={setIsReload} />}

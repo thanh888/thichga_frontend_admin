@@ -166,7 +166,7 @@ export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }
     <Card sx={{ bgcolor: '#e0e0e0', borderRadius: 4, boxShadow: 3, mb: 8, p: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">
-          Danh sách tạo cược cho phiên{' '}
+          Danh sách cược trong phiên{' '}
           <Typography component="span" fontWeight="bold">
             #{room?.latestSessionID}
           </Typography>
