@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000'; // đổi theo URL backend NestJS
+const SOCKET_URL = process.env.NEXT_PUBLIC_BASE_API_URL; // đổi theo URL backend NestJS
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);

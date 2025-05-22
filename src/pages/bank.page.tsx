@@ -129,7 +129,7 @@ export default function BankPageBankPage() {
       transferContent: setting?.bank?.transferContent ?? '',
     });
     if (setting?.bank?.imageQR) {
-      setImagePreview('http://localhost:5000/' + setting?.bank?.imageQR);
+      setImagePreview(process.env.NEXT_PUBLIC_BASE_API_URL + '/' + setting?.bank?.imageQR);
     }
   }, [setting]);
 
@@ -249,7 +249,7 @@ export default function BankPageBankPage() {
               >
                 {imagePreview ? (
                   <img
-                    src={imagePreview ?? `http://localhost:5000/${setting?.bank?.imageQR}`}
+                    src={imagePreview ?? `process.env.NEXT_PUBLIC_BASE_API_URL/${setting?.bank?.imageQR}`}
                     alt="QR Preview"
                     style={{
                       maxWidth: '100%',

@@ -11,6 +11,7 @@ import {
   UpdateBetRoomById,
   uploadImageApi,
 } from '@/services/dashboard/bet-room.api';
+import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { UrlTypeEnum } from '@/utils/enum/url-type.enum';
 import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
@@ -83,14 +84,14 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
   const [openWinnerDialog, setOpenWinnerDialog] = React.useState<boolean>(false);
-  const [selectedWinner, setSelectedWinner] = React.useState<TeamEnum | null>(null);
+  const [selectResult, setSelectResult] = React.useState<string>('');
 
   const socket = useSocket();
 
   React.useEffect(() => {
     setFormData(data || {});
     if (data?.thumbnail) {
-      setImagePreview('http://localhost:5000/' + data?.thumbnail);
+      setImagePreview(process.env.NEXT_PUBLIC_BASE_API_URL + '/' + data?.thumbnail);
       setFileName(data?.thumbnail.split('/').pop() ?? '');
     }
   }, [data]);
@@ -240,18 +241,18 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   };
 
   const handleConfirmCloseSession = async () => {
-    if (!formData || !selectedWinner) return;
+    if (!formData || !selectResult) return;
 
     try {
       const response = await CloseSession(id, {
         latestSessionID: formData.latestSessionID,
-        winner: selectedWinner,
+        winner: selectResult,
         fee: formData.fee,
       });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         setIsReload(true);
-        toast.success(`Đã đóng phiên với đội thắng: ${selectedWinner}`);
+        toast.success(`Đã đóng phiên với kết quả: ${selectResult}`);
         if (socket) {
           socket.emit('update-room', {
             roomID: id,
@@ -267,7 +268,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       toast.error('Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setOpenWinnerDialog(false);
-      setSelectedWinner(null);
+      setSelectResult('');
     }
   };
 
@@ -561,23 +562,35 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle id="winner-dialog-title">Chọn đội chiến thắng</DialogTitle>
+        <DialogTitle id="winner-dialog-title">Chọn kết quả phiên</DialogTitle>
         <DialogContent>
-          <DialogContentText id="winner-dialog-description">
-            Vui lòng chọn đội chiến thắng cho phiên này.
-          </DialogContentText>
+          <DialogContentText id="winner-dialog-description">Vui lòng chọn kết quả cho phiên này.</DialogContentText>
           <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: 'center' }}>
             <Button
-              variant={selectedWinner === TeamEnum.RED ? 'contained' : 'outlined'}
+              variant={selectResult === BetResultEnum.CANCEL ? 'contained' : 'outlined'}
+              color="warning"
+              onClick={() => setSelectResult(BetResultEnum.CANCEL)}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant={selectResult === BetResultEnum.DRAW ? 'contained' : 'outlined'}
+              color="secondary"
+              onClick={() => setSelectResult(BetResultEnum.DRAW)}
+            >
+              Hòa
+            </Button>
+            <Button
+              variant={selectResult === TeamEnum.RED ? 'contained' : 'outlined'}
               color="error"
-              onClick={() => setSelectedWinner(TeamEnum.RED)}
+              onClick={() => setSelectResult(TeamEnum.RED)}
             >
               {formData?.redName || 'Đội Đỏ'}
             </Button>
             <Button
-              variant={selectedWinner === TeamEnum.BLUE ? 'contained' : 'outlined'}
+              variant={selectResult === TeamEnum.BLUE ? 'contained' : 'outlined'}
               color="primary"
-              onClick={() => setSelectedWinner(TeamEnum.BLUE)}
+              onClick={() => setSelectResult(TeamEnum.BLUE)}
             >
               {formData?.blueName || 'Đội Xanh'}
             </Button>
@@ -590,7 +603,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
           <Button
             onClick={handleConfirmCloseSession}
             color="primary"
-            disabled={!selectedWinner}
+            disabled={!selectResult}
             variant="contained"
             autoFocus
           >

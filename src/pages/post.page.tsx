@@ -59,7 +59,7 @@ export default function PostPage() {
       image: setting?.post?.image ?? '',
     });
     if (setting?.bank?.imageQR) {
-      setImagePreview('http://localhost:5000/' + setting?.bank?.imageQR);
+      setImagePreview(process.env.NEXT_PUBLIC_BASE_API_URL + '/' + setting?.bank?.imageQR);
     }
   }, [setting]);
 
@@ -203,7 +203,7 @@ export default function PostPage() {
               >
                 {imagePreview ? (
                   <img
-                    src={imagePreview ?? `http://localhost:5000/${setting?.bank?.imageQR}`}
+                    src={imagePreview ?? `process.env.NEXT_PUBLIC_BASE_API_URL/${setting?.bank?.imageQR}`}
                     alt="Preview of the uploaded file"
                     style={{
                       maxWidth: '100%',

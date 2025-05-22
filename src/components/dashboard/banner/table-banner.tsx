@@ -136,7 +136,7 @@ const BannerTable: React.FC = () => {
                       <TableCell key={column.id} align={column.align}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <img
-                            src={'http://localhost:5000/' + row}
+                            src={process.env.NEXT_PUBLIC_BASE_API_URL + '/' + row}
                             alt="Banner"
                             style={{ maxWidth: '100px', maxHeight: '50px', marginRight: '8px' }}
                           />
