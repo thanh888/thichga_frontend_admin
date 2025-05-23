@@ -27,7 +27,7 @@ export interface MobileNavProps {
 }
 
 export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
 
   return (
     <Drawer

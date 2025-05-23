@@ -2,12 +2,9 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api'; // Assumed adapted for bet sessions
-
 import { paginateBetSessionApi } from '@/services/dashboard/bet-session.api';
 import { convertDateTime } from '@/utils/functions/default-function';
 import { BettingSessionInterface } from '@/utils/interfaces/bet-sesion.interface';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
   Box,
   Button,

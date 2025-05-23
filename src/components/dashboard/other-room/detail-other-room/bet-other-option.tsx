@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
+import { findAllBetHistoryBySessionApi, paginateBetHistoryApi } from '@/services/dashboard/bet-history.api';
 import { createBetOption, paginateOptionBySessionApi } from '@/services/dashboard/bet-option.api';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import { convertDateTime } from '@/utils/functions/default-function';
@@ -80,7 +80,7 @@ export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }
       return;
     }
     try {
-      const response = await paginateOptionBySessionApi(session_id);
+      const response = await findAllBetHistoryBySessionApi(session_id, '');
       if (response.status === 200 || response.status === 201) {
         // Transform creatorID and matchedUserId to usernames (if needed)
         setBets(response.data);
@@ -177,7 +177,7 @@ export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }
         <Table sx={{ minWidth: '800px' }}>
           <TableHead>
             <TableRow>
-              {columns.map((column) => (
+              {columns?.map((column) => (
                 <TableCell key={column.id} align={column.align} sx={{ minWidth: column.minWidth }}>
                   {column.label}
                 </TableCell>
@@ -185,7 +185,7 @@ export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }
             </TableRow>
           </TableHead>
           <TableBody>
-            {bets.map((row) => (
+            {bets?.map((row) => (
               <TableRow hover key={row.code}>
                 <TableCell>
                   <Typography variant="subtitle2">{row.code}</Typography>

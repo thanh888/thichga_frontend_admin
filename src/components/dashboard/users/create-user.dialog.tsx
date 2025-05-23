@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { CreateAccount } from '@/services/dashboard/user.api';
 import { RoleUsers } from '@/utils/enum/role.enum';
-import { CheckFormDataNull, rolesAdmin, setFieldError } from '@/utils/functions/default-function';
+import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
 import { UserInterface } from '@/utils/interfaces/user.interface';
 import CloseIcon from '@mui/icons-material/Close';
 import {
@@ -15,9 +15,7 @@ import {
   Grid,
   IconButton,
   InputLabel,
-  MenuItem,
   OutlinedInput,
-  Select,
   SelectChangeEvent,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';

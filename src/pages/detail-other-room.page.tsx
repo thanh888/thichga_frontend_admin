@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getOneBetroomId } from '@/services/dashboard/bet-room.api';
-import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import { Grid } from '@mui/material';
 import { Box } from '@mui/system';

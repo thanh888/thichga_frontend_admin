@@ -46,20 +46,6 @@ const DisabledInput = styled(OutlinedInput)(({ theme }) => ({
   },
 }));
 
-// Custom styled Select to fix label overlap and improve readability
-const StyledSelect = styled(Select)(({ theme }) => ({
-  '& .MuiSelect-select': {
-    paddingTop: theme.spacing(2), // Add padding to prevent label overlap
-    paddingBottom: theme.spacing(1),
-  },
-  '& .MuiInputLabel-root': {
-    transform: 'translate(14px, 8px) scale(1)', // Adjust label position
-    '&.MuiInputLabel-shrink': {
-      transform: 'translate(14px, -6px) scale(0.75)', // Adjust shrink position
-    },
-  },
-}));
-
 interface EditUserProps {
   openEdit: any;
   setOpenEdit: React.Dispatch<React.SetStateAction<any>>;

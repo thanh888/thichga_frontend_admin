@@ -2,10 +2,9 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteRoomById, deleteSoftRoomById, paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
+import { deleteSoftRoomById, paginateBetRoomApi } from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
   Box,
   Button,

@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import SunEditor from 'suneditor-react';
 
 import 'suneditor/dist/css/suneditor.min.css';
 
+import dynamic from 'next/dynamic';
+
 import { sunEditorOptions } from './suneditorConfig';
+
+const SunEditor = dynamic(() => import('suneditor-react'), {
+  ssr: false, // Disable server-side rendering
+});
 
 // Định nghĩa props
 interface SunEditorComponentProps {
@@ -20,12 +25,12 @@ const SunEditorComponent: React.FC<SunEditorComponentProps> = ({
   setContent = () => {}, // Hàm mặc định tránh lỗi khi không truyền
   onBlur,
 }) => {
-  const editorRef = useRef<typeof SunEditor>(null);
+  const editorRef = useRef<any>(null);
 
   // Đồng bộ nội dung khi content từ props thay đổi
   useEffect(() => {
-    if (editorRef.current?.editor.getContents() !== content && editorRef.current) {
-      editorRef.current.editor.setContents(content);
+    if (editorRef.current && editorRef.current.getContents && editorRef.current.getContents() !== content) {
+      editorRef.current.setContents(content);
     }
   }, [content]);
 
@@ -42,22 +47,22 @@ const SunEditorComponent: React.FC<SunEditorComponentProps> = ({
   };
 
   return (
-    <div>
-      <SunEditor
-        ref={editorRef}
-        name="content"
-        defaultValue={content}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        setOptions={{
-          ...sunEditorOptions,
-          //   imageUploadUrl: `${BASE_API_URL}/upload/editor`,
-          //   callBackSave: handleChange, // Xử lý khi lưu
-          // Xử lý upload ảnh
-        }}
-        // onImageUploadBefore={handleImageUpload}
-      />
-    </div>
+    <SunEditor
+      getSunEditorInstance={(instance) => {
+        editorRef.current = instance;
+      }}
+      name="content"
+      defaultValue={content}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      setOptions={{
+        ...sunEditorOptions,
+        //   imageUploadUrl: `${BASE_API_URL}/upload/editor`,
+        //   callBackSave: handleChange, // Xử lý khi lưu
+        // Xử lý upload ảnh
+      }}
+      // onImageUploadBefore={handleImageUpload}
+    />
   );
 };
 

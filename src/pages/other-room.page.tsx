@@ -12,14 +12,10 @@ import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import { config } from '@/config';
 import CreateOtherRoom from '@/components/dashboard/other-room/create-other-room.dialog';
 import { OtherRoomsTable } from '@/components/dashboard/other-room/other-room-table';
-import CreateRoom from '@/components/dashboard/rooms/create-room.dialog';
-import { RoomFormData, RoomsTable } from '@/components/dashboard/rooms/room-table';
 
 export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function OtherRoomPage(): React.JSX.Element {
-  const page = 0;
-  const rowsPerPage = 5;
   const [openCreate, setOpenCreate] = React.useState(false);
   const [isReload, setIsReload] = React.useState(false);
 

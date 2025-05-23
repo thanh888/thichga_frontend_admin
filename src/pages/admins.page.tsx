@@ -11,7 +11,7 @@ import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 
 import { config } from '@/config';
 import { AdminsStatusCode } from '@/components/dashboard/admins/admin-status-code';
-import { AdminFormData, AdminsTable } from '@/components/dashboard/admins/admin-table';
+import { AdminsTable } from '@/components/dashboard/admins/admin-table';
 import CreateAdmin from '@/components/dashboard/admins/create-admin.dialog';
 
 export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;

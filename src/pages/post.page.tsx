@@ -11,17 +11,6 @@ import { toast } from 'react-toastify';
 import { SettingContext } from '@/contexts/setting-context';
 import SunEditorComponent from '@/components/suneditor/suneditor.customize';
 
-interface PostFormData {
-  image: string;
-  title: string;
-  content: string;
-}
-
-interface Props {
-  isReload: boolean;
-  setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
 export default function PostPage() {
   const settingContext = React.useContext(SettingContext);
   const setting = settingContext?.setting;

@@ -64,7 +64,8 @@ interface Props {
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const AutoDepositHistoryPage: React.FC<Props> = ({ isReload, setIsReload }) => {
+const AutoDepositHistoryPage = () => {
+  const [isReload, setIsReload] = React.useState<boolean>(true);
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');

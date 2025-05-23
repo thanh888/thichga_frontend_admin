@@ -6,7 +6,6 @@ import {
   CloseSession,
   DisableBetting,
   EnableBetting,
-  getOneBetroomId,
   OpenSession,
   UpdateBetRoomById,
   uploadImageApi,

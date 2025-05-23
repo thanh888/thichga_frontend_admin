@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { CloseSession, EnableBetting, UpdateOdds } from '@/services/dashboard/bet-room.api';
+import { useParams } from 'next/navigation';
+import { EnableBetting, UpdateOdds } from '@/services/dashboard/bet-room.api';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
@@ -17,8 +17,6 @@ import {
   Typography,
 } from '@mui/material';
 import { toast } from 'react-toastify';
-
-import { useSocket } from '@/hooks/socket';
 
 interface OddsFormData {
   redOdds: string;

@@ -1,14 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { WidthdrawPaginate, WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { WidthdrawPaginate } from '@/services/dashboard/withdraw-history.api';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
   Button,
   Paper,
-  Tab,
   Table,
   TableBody,
   TableCell,
@@ -17,7 +16,6 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
-  Tabs,
   TextField,
   Typography,
 } from '@mui/material';

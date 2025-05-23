@@ -1,8 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
 import { createBetOption, paginateOptionBySessionApi } from '@/services/dashboard/bet-option.api';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import { convertDateTime } from '@/utils/functions/default-function';

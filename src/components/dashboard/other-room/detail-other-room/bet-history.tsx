@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateBetHistoryApi } from '@/services/dashboard/bet-history';
+import { paginateBetHistoryApi } from '@/services/dashboard/bet-history.api';
 import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import { convertDateTime, listStatusHistory } from '@/utils/functions/default-function';
