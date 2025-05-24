@@ -59,6 +59,11 @@ export const getOneBetroomId = async (id: string) => {
   return res;
 };
 
+export const getAllBetRoom = async () => {
+  const res = await axiosCustomize.get(`/bet-room`);
+  return res;
+};
+
 export const deleteRoomById = async (id: string) => {
   const res = await axiosCustomize.delete(`/bet-room/${id}`);
   return res;
