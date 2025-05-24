@@ -54,6 +54,9 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
       handleCloseDialog();
       return;
     }
+    if (!user) {
+      return;
+    }
 
     try {
       const formData = {

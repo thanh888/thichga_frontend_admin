@@ -17,7 +17,7 @@ export interface UserInterface {
   referral_code?: string;
   referral_receiver_id?: any; // ID của người giới thiệu
   device_id?: string;
-  role?: RoleUsers | string;
+  role: RoleUsers | string;
   bank?: BankInteface;
   money?: number;
 

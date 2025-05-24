@@ -1,3 +1,5 @@
+import { RoleUsers } from '@/utils/enum/role.enum';
+
 export interface NavItemConfig {
   key: string;
   title?: string;
@@ -12,4 +14,5 @@ export interface NavItemConfig {
   // If you need to match multiple paths,
   // can extend it to accept multiple matchers.
   matcher?: { type: 'startsWith' | 'equals'; href: string };
+  role: RoleUsers[];
 }

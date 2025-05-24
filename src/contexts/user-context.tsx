@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import { getAccoutUserApi } from '@/services/auth/auth.api';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 
 import { logger } from '@/lib/default-logger';
 
 export interface UserContextValue {
-  user: any;
+  user: UserInterface;
   error: string | null;
   isLoading: boolean;
   checkSession?: () => Promise<void>;

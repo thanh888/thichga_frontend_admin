@@ -6,8 +6,10 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_BASE_API_URL; // đổi theo URL back
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
-  const accessToken = localStorage.getItem('account');
-
+  let accessToken = '';
+  if (typeof window !== 'undefined') {
+    accessToken = localStorage.getItem('account') || '';
+  }
   useEffect(() => {
     if (!accessToken) return;
 

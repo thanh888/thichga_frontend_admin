@@ -3,6 +3,7 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';
+import { RoleUsers } from '@/utils/enum/role.enum';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
@@ -11,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
+import { UserContext } from '@/contexts/user-context';
 import { Logo } from '@/components/core/logo';
 
 import { navItems } from './config';
@@ -18,6 +20,9 @@ import { navIcons } from './nav-icons';
 
 export function SideNav(): React.JSX.Element {
   const pathname = usePathname();
+
+  const userContext = React.useContext(UserContext);
+  const user = userContext?.user;
 
   return (
     <Box
@@ -49,23 +54,33 @@ export function SideNav(): React.JSX.Element {
     >
       <Stack spacing={2} sx={{ p: 3 }}>
         <Box component={RouterLink} href={paths.home} sx={{ display: 'inline-flex' }}>
-          <Logo color="light" height={32} width={122} />
+          <Logo color="light" height={40} width={100} />
         </Box>
       </Stack>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px', overflow: 'auto' }}>
-        {renderNavItems({ pathname: pathname ?? '', items: navItems })}
+        {user && renderNavItems({ pathname: pathname ?? '', items: navItems, role: user.role as RoleUsers })}
       </Box>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
     </Box>
   );
 }
 
-function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pathname: string }): React.JSX.Element {
+function renderNavItems({
+  items = [],
+  pathname,
+  role,
+}: {
+  items?: NavItemConfig[];
+  pathname: string;
+  role: RoleUsers;
+}): React.JSX.Element {
   const children = items.reduce((acc: React.ReactNode[], curr: NavItemConfig): React.ReactNode[] => {
     const { key, ...item } = curr;
 
-    acc.push(<NavItem key={key} pathname={pathname} {...item} />);
+    if (item.role.includes(role)) {
+      acc.push(<NavItem key={key} pathname={pathname} {...item} />);
+    }
 
     return acc;
   }, []);

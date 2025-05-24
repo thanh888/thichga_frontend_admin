@@ -60,7 +60,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
     }
 
     try {
-      if (!openDialog?._id) {
+      if (!openDialog?._id || !user) {
         return;
       }
       const formData = {

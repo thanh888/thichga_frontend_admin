@@ -63,6 +63,7 @@ const defaultFormData: UserInterface = {
   money: 0,
   status: '',
   referral_receiver_id: '',
+  role: '',
 };
 
 export default function EditUser({ openEdit, setOpenEdit, setIsReload, listReferralBys }: Readonly<EditUserProps>) {
@@ -80,6 +81,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
         money: openEdit?.money ?? '',
         status: openEdit?.status ?? UserStatus.ACTIVE,
         referral_receiver_id: openEdit?.referral_receiver_id?._id ?? '',
+        role: openEdit?.role ?? '', // Add this line to include the required 'role' property
       });
     }
   }, [openEdit]);

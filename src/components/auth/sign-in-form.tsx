@@ -61,7 +61,9 @@ export function SignInForm(): React.JSX.Element {
       console.log(res);
 
       if (res.status === 200 || res.status === 201) {
-        localStorage.setItem('account', res.data.accessToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('account', res.data.accessToken);
+        }
         if (checkSession) {
           await checkSession(); // Call checkSession to update user state
         }
