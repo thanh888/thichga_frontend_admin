@@ -69,7 +69,11 @@ const columns: Column[] = [
   { id: 'createdAt', label: 'Thời gian', minWidth: 120, align: 'center' },
 ];
 
-export default function SessionDetailPage(): React.JSX.Element {
+interface Props {
+  sessionId: string;
+}
+
+export default function SessionDetailPage({ sessionId }: Props): React.JSX.Element {
   const [bets, setBets] = React.useState<any>({ docs: [], totalDocs: 0 });
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
@@ -80,8 +84,7 @@ export default function SessionDetailPage(): React.JSX.Element {
   const [error, setError] = React.useState<string>('');
 
   const router = useRouter();
-  const param = useParams();
-  const sessionID = param?.id.toString();
+  const sessionID = sessionId;
 
   const fetchBets = async () => {
     setIsLoading(true);

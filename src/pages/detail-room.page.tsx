@@ -12,7 +12,10 @@ import BetSesionComponent from '@/components/dashboard/rooms/detail/bet-session'
 import SampleOdds from '@/components/dashboard/rooms/detail/sample-odds';
 import EditRoom from '@/components/dashboard/rooms/detail/update-room';
 
-export default function DetailRoom() {
+interface Props {
+  roomId: string;
+}
+export default function DetailRoom({ roomId }: Props) {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? '';
 

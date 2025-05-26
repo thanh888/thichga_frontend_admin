@@ -11,9 +11,12 @@ import BetOptionOtherComponent from '@/components/dashboard/other-room/detail-ot
 import BetSesionOtherComponent from '@/components/dashboard/other-room/detail-other-room/bet-other-session';
 import UpdateOtherRoom from '@/components/dashboard/other-room/detail-other-room/update-other-room';
 
-export default function DetailOtherRoomPage() {
+interface Props {
+  roomId: string;
+}
+export default function DetailOtherRoomPage({ roomId }: Props) {
   const params = useParams<{ id: string }>();
-  const id = params?.id ?? '';
+  const id = roomId;
 
   const [isReload, setIsReload] = useState<boolean>(true);
 

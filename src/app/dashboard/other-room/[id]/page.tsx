@@ -18,6 +18,9 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function Page() {
-  return <DetailOtherRoomPage />;
+interface Props {
+  params: { id: string };
+}
+export default function Page({ params }: Props) {
+  return <DetailOtherRoomPage roomId={params.id} />;
 }

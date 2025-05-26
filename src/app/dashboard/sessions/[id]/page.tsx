@@ -18,6 +18,9 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function BetSession() {
-  return <SessionDetailPage />;
+interface Props {
+  params: { id: string };
+}
+export default function BetSession({ params }: Props) {
+  return <SessionDetailPage sessionId={params.id} />;
 }
