@@ -16,7 +16,7 @@ interface Props {
 }
 export default function DetailOtherRoomPage({ roomId }: Props) {
   const params = useParams<{ id: string }>();
-  const id = roomId;
+  const id = params?.id.toString();
 
   const [isReload, setIsReload] = useState<boolean>(true);
 

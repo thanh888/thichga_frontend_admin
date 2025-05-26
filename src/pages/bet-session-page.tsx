@@ -84,7 +84,8 @@ export default function SessionDetailPage({ sessionId }: Props): React.JSX.Eleme
   const [error, setError] = React.useState<string>('');
 
   const router = useRouter();
-  const sessionID = sessionId;
+  const param = useParams();
+  const sessionID = param?.id?.toString();
 
   const fetchBets = async () => {
     setIsLoading(true);

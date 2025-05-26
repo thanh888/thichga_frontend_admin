@@ -1,26 +1,22 @@
 import SessionDetailPage from '@/pages/bet-session-page';
 import { findAllBetSessionApi } from '@/services/dashboard/bet-session.api';
 
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+// Define the possible values for the `id` parameter
 export async function generateStaticParams() {
-  let response: any;
-  try {
-    response = await findAllBetSessionApi();
-  } catch (e) {
-    return [];
-  }
+  // Replace this with your actual logic to fetch possible room IDs
+  const roomIds = ['1', '2', '3']; // Example: List of room IDs
 
-  if (response && (response.status === 200 || response.status === 201) && Array.isArray(response.data)) {
-    return response.data.map((session: { _id: string }) => ({
-      id: session._id,
-    }));
-  }
-  // Nếu không có dữ liệu hợp lệ, trả về mảng rỗng
-  return [];
+  // Return an array of objects with the `id` param
+  return roomIds.map((id) => ({
+    id,
+  }));
 }
 
-interface Props {
-  params: { id: string };
-}
-export default function BetSession({ params }: Props) {
-  return <SessionDetailPage sessionId={params.id} />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  return <SessionDetailPage sessionId={id} />;
 }

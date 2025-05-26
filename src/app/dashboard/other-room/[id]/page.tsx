@@ -1,26 +1,21 @@
-import DetailOtherRoomPage from '@/pages/detail-other-room.page';
-import { getAllBetRoom } from '@/services/dashboard/bet-room.api';
+import DetailRoom from '@/pages/detail-room.page';
 
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+// Define the possible values for the `id` parameter
 export async function generateStaticParams() {
-  let response: any;
-  try {
-    response = await getAllBetRoom();
-  } catch (e) {
-    return [];
-  }
+  // Replace this with your actual logic to fetch possible room IDs
+  const roomIds = ['1', '2', '3']; // Example: List of room IDs
 
-  if (response && (response.status === 200 || response.status === 201) && Array.isArray(response.data)) {
-    return response.data.map((room: { _id: string }) => ({
-      id: room._id,
-    }));
-  }
-  // Nếu không có dữ liệu hợp lệ, trả về mảng rỗng
-  return [];
+  // Return an array of objects with the `id` param
+  return roomIds.map((id) => ({
+    id,
+  }));
 }
 
-interface Props {
-  params: { id: string };
-}
-export default function Page({ params }: Props) {
-  return <DetailOtherRoomPage roomId={params.id} />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  return <DetailRoom roomId={id} />;
 }
