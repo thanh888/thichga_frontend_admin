@@ -1,4 +1,4 @@
-import DetailRoom from '@/pages/detail-room.page';
+import DetailOtherRoomPage from '@/pages/detail-other-room.page';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -6,5 +6,5 @@ type Props = {
 
 export default async function Page({ params }: Props) {
   const { id } = await params;
-  return <DetailRoom roomId={id} />;
+  return <DetailOtherRoomPage roomId={id} />;
 }

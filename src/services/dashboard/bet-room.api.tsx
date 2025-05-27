@@ -24,6 +24,11 @@ export const CloseSession = async (id: string, body: any) => {
   return res;
 };
 
+export const CloseOtherSession = async (id: string, body: any) => {
+  const res = await axiosCustomize.put(`/bet-room/${id}/close-other-session`, body);
+  return res;
+};
+
 export const EnableBetting = async (id: string, body: any) => {
   const res = await axiosCustomize.put(`/bet-room/${id}/enable-betting`, body);
   return res;

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
+  CloseOtherSession,
   CloseSession,
   DisableBetting,
   EnableBetting,
@@ -198,7 +199,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
     if (!formData || !selectResult) return;
 
     try {
-      const response = await CloseSession(id, {
+      const response = await CloseOtherSession(id, {
         latestSessionID: formData.latestSessionID,
         winner: selectResult,
         fee: formData.fee,
