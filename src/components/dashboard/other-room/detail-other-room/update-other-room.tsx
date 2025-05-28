@@ -20,6 +20,7 @@ import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -85,6 +86,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
   const [formError, setFormError] = React.useState<any>({});
   const [openWinnerDialog, setOpenWinnerDialog] = React.useState<boolean>(false);
   const [selectResult, setSelectResult] = React.useState<string>('');
+  const [isClosingSession, setIsClosingSession] = React.useState<boolean>(false); // New loading state
 
   const socket = useSocket();
 
@@ -109,7 +111,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
         ...prev!,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
+      if (!value && ['roomName', 'urlLive', 'urlType', 'fee', 'marquee', 'redName', 'blueName'].includes(name)) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -124,9 +126,10 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       roomName: formData.roomName,
       urlLive: formData.urlLive,
       urlType: formData.urlType,
-      secondsEnding: formData.secondsEnding,
       redName: formData.redName,
       blueName: formData.blueName,
+      fee: formData.fee,
+      marquee: formData.marquee,
     };
     const isNotNull = CheckFormDataNull(requiredFields, setFormError);
 
@@ -142,13 +145,8 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       formDataToSend.append('urlType', formData.urlType ?? '');
       formDataToSend.append('fee', formData?.fee?.toString() ?? '');
       formDataToSend.append('marquee', formData.marquee ?? '');
-
       formDataToSend.append('redName', formData.redName ?? '');
       formDataToSend.append('blueName', formData.blueName ?? '');
-
-      if (formData.thumbnail) {
-        formDataToSend.append('thumbnail', formData.thumbnail);
-      }
 
       const response = await UpdateBetRoomById(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
@@ -170,7 +168,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
   const handleOpenSession = async () => {
     if (!formData) return;
     try {
-      const response = await OpenSession(id, { secondsEnding: data?.secondsEnding });
+      const response = await OpenSession(id, { fee: formData.fee });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         setIsReload(true);
@@ -198,6 +196,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
   const handleConfirmCloseSession = async () => {
     if (!formData || !selectResult) return;
 
+    setIsClosingSession(true); // Start loading
     try {
       const response = await CloseOtherSession(id, {
         latestSessionID: formData.latestSessionID,
@@ -222,6 +221,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       console.error('Error details:', error);
       toast.error('Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
+      setIsClosingSession(false); // Stop loading
       setOpenWinnerDialog(false);
       setSelectResult('');
     }
@@ -253,7 +253,6 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       const formDataToSend = new FormData();
       formDataToSend.append('isAcceptBetting', String(false));
       formDataToSend.append('latestSessionID', String(formData.latestSessionID));
-
       const response = await UpdateBettingApi(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
@@ -354,7 +353,6 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
             />
           </FormControl>
         </Grid>
-
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
             <InputLabel shrink>% lãi</InputLabel>
@@ -366,14 +364,12 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
             />
           </FormControl>
         </Grid>
-
         <Grid item xs={12} md={12}>
           <FormControl fullWidth>
             <InputLabel shrink>Dòng chữ chạy (marquee)</InputLabel>
             <OutlinedInput name="marquee" value={formData?.marquee} onChange={handleChange} />
           </FormControl>
         </Grid>
-
         <Grid item xs={12} md={6}>
           <FormControl fullWidth required>
             <InputLabel shrink>Tên đội đỏ</InputLabel>
@@ -396,7 +392,6 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
             />
           </FormControl>
         </Grid>
-
         <Box sx={{ width: '100%', mt: 4, display: 'flex', gap: 2, textAlign: 'right', justifyContent: 'center' }}>
           <Button onClick={handleSubmit} variant="contained">
             Cập nhật
@@ -423,8 +418,14 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
             </Button>
           ) : (
             <>
-              <Button onClick={handleCloseSession} variant="contained" sx={{ width: '100%' }} color={'error'}>
-                {'Đóng phiên'}
+              <Button
+                onClick={handleCloseSession}
+                variant="contained"
+                sx={{ width: '100%' }}
+                color={'error'}
+                disabled={isClosingSession} // Disable button while loading
+              >
+                {isClosingSession ? <CircularProgress size={24} /> : 'Đóng phiên'}
               </Button>
               <Button onClick={handleEnableBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
                 {'Mở cược'}
@@ -451,6 +452,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
               variant={selectResult === BetResultEnum.CANCEL ? 'contained' : 'outlined'}
               color="warning"
               onClick={() => setSelectResult(BetResultEnum.CANCEL)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               Hủy
             </Button>
@@ -458,6 +460,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
               variant={selectResult === BetResultEnum.DRAW ? 'contained' : 'outlined'}
               color="secondary"
               onClick={() => setSelectResult(BetResultEnum.DRAW)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               Hòa
             </Button>
@@ -465,6 +468,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
               variant={selectResult === TeamEnum.RED ? 'contained' : 'outlined'}
               color="error"
               onClick={() => setSelectResult(TeamEnum.RED)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               {formData?.redName || 'Đội Đỏ'}
             </Button>
@@ -472,23 +476,33 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
               variant={selectResult === TeamEnum.BLUE ? 'contained' : 'outlined'}
               color="primary"
               onClick={() => setSelectResult(TeamEnum.BLUE)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               {formData?.blueName || 'Đội Xanh'}
             </Button>
           </Box>
+          {isClosingSession && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <CircularProgress />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenWinnerDialog(false)} color="primary">
+          <Button
+            onClick={() => setOpenWinnerDialog(false)}
+            color="primary"
+            disabled={isClosingSession} // Disable cancel button while loading
+          >
             Hủy
           </Button>
           <Button
             onClick={handleConfirmCloseSession}
             color="primary"
-            disabled={!selectResult}
+            disabled={!selectResult || isClosingSession} // Disable confirm button while loading
             variant="contained"
             autoFocus
           >
-            Xác nhận
+            {isClosingSession ? <CircularProgress size={24} /> : 'Xác nhận'}
           </Button>
         </DialogActions>
       </Dialog>

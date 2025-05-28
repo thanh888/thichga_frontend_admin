@@ -15,6 +15,8 @@ export interface BettingSessionInterface {
   // Unique code for the betting session
   code?: string;
 
+  fee?: string;
+
   // Seconds until the session ends
   secondsEnding?: number;
 

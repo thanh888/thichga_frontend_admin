@@ -35,6 +35,7 @@ import { paths } from '@/paths';
 // Định nghĩa interface cho dữ liệu bảng
 interface Betsession {
   code: string;
+  fee: string;
   isOpened: boolean;
   createdAt: string;
   revenue: string;
@@ -52,6 +53,7 @@ interface Column {
 const columns: Column[] = [
   { id: 'code', label: 'Mã cược', minWidth: 100, align: 'left' },
   { id: 'isOpened', label: 'Trạng thái', minWidth: 100, align: 'left' },
+  { id: 'fee', label: 'Hoa hồng', minWidth: 100, align: 'left' },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   {
     id: 'revenue',
@@ -128,7 +130,7 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
   };
 
   const handleViewDetail = (id: string) => {
-    router.push(`${paths.dashboard.sessions}/${id}`); // Navigate to session detail page
+    router.push(`${paths.dashboard.session_exgame}/${id}`); // Navigate to session detail page
   };
 
   const handleDelete = (code: string) => {
@@ -198,6 +200,7 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
                     {row.isOpened ? 'Mở' : 'Đóng'}
                   </Typography>
                 </TableCell>
+                <TableCell>{(row?.fee ?? 5) + '%'}</TableCell>
                 <TableCell>{convertDateTime(row?.createdAt?.toString() ?? '')}</TableCell>
                 <TableCell align="right">
                   {columns.find((col) => col.id === 'revenue')?.format?.(row?.revenue?.toString() ?? '')}

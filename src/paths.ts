@@ -10,6 +10,8 @@ export const paths = {
     bet_room: '/dashboard/rooms',
     other_room: '/dashboard/other-room',
     sessions: '/dashboard/sessions',
+    session_exgame: '/dashboard/sessions-exgame',
+    histories_exgame: '/dashboard/histories-exgame',
     deposit_mode: '/dashboard/deposit-mode',
     deposits: '/dashboard/deposits',
     auto_deposits: '/dashboard/auto-deposit',

@@ -26,6 +26,15 @@ export const numberThousand = (value: string) => {
   return Number(value).toLocaleString('de-DE') ?? 0;
 };
 
+export const numberThousandFload = (value: string | number) => {
+  const floatValue = parseFloat(value.toString());
+  if (isNaN(floatValue)) return '0,00';
+  return floatValue.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 // Dữ liệu chọn chức vụ
 export const rolesAdmin = [
   { value: RoleUsers.ADMIN, label: 'ADMIN' },

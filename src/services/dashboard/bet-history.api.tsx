@@ -9,3 +9,8 @@ export const findAllBetHistoryBySessionApi = async (session_id: string, query: s
   const res = await axiosCustomize.get(`/bet-history/${session_id}/by-session?${query}`);
   return res;
 };
+
+export const findAllBetHistoryByOptionApi = async (option_id: string, query: string) => {
+  const res = await axiosCustomize.get(`/bet-history/${option_id}/by-option-exgame?${query}`);
+  return res;
+};

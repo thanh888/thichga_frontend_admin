@@ -17,6 +17,7 @@ import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -84,6 +85,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const [fileName, setFileName] = React.useState<string>('');
   const [openWinnerDialog, setOpenWinnerDialog] = React.useState<boolean>(false);
   const [selectResult, setSelectResult] = React.useState<string>('');
+  const [isClosingSession, setIsClosingSession] = React.useState<boolean>(false); // New loading state
 
   const socket = useSocket();
 
@@ -94,12 +96,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       setFileName(data?.thumbnail.split('/').pop() ?? '');
     }
   }, [data]);
-
-  React.useEffect(() => {
-    if (data?.isAcceptBetting) {
-      // gets session isOpened ==== true
-    }
-  }, [data?.isAcceptBetting]);
 
   const handleChange = (
     event:
@@ -112,7 +108,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
         ...prev!,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
+      if (!value && ['roomName', 'urlLive', 'urlType', 'fee', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -179,7 +175,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       formDataToSend.append('secondsEnding', formData?.secondsEnding?.toString() ?? '');
       formDataToSend.append('fee', formData?.fee?.toString() ?? '');
       formDataToSend.append('marquee', formData.marquee ?? '');
-
       formDataToSend.append('chattingJframe', formData.chattingJframe ?? '');
       formDataToSend.append('redName', formData.redName ?? '');
       formDataToSend.append('blueName', formData.blueName ?? '');
@@ -214,7 +209,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const handleOpenSession = async () => {
     if (!formData) return;
     try {
-      const response = await OpenSession(id, { secondsEnding: data?.secondsEnding });
+      const response = await OpenSession(id, { fee: formData.fee });
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isOpened: !prev.isOpened } : prev));
         setIsReload(true);
@@ -242,6 +237,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   const handleConfirmCloseSession = async () => {
     if (!formData || !selectResult) return;
 
+    setIsClosingSession(true); // Start loading
     try {
       const response = await CloseSession(id, {
         latestSessionID: formData.latestSessionID,
@@ -266,6 +262,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       console.error('Error details:', error);
       toast.error('Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
+      setIsClosingSession(false); // Stop loading
       setOpenWinnerDialog(false);
       setSelectResult('');
     }
@@ -298,7 +295,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       const formDataToSend = new FormData();
       formDataToSend.append('isAcceptBetting', String(false));
       formDataToSend.append('latestSessionID', String(formData.latestSessionID));
-
       const response = await DisableBetting(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
         setFormData((prev) => (prev ? { ...prev, isAcceptBetting: !prev.isAcceptBetting } : prev));
@@ -357,7 +353,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
   };
 
   return (
-    <Box sx={{ width: '100%', pt: 1, pb: 4, px: 4, borderRadius: 2, boxShadow: 3 }}>
+    <Box sx={{ width: '100%', pt: 1, pb: 4, px: 4, border桩: 3 }}>
       <Typography variant="h4" gutterBottom>
         Thông tin phòng
       </Typography>
@@ -462,7 +458,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
                 />
               </FormControl>
             </Grid>
-
             <Grid item xs={12} md={12}>
               <FormControl fullWidth>
                 <InputLabel shrink>Dòng chữ chạy (marquee)</InputLabel>
@@ -510,7 +505,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               </FormControl>
             </Grid>
           </Grid>
-
           <Box sx={{ width: '100%', mt: 4, display: 'flex', gap: 2, textAlign: 'right', justifyContent: 'center' }}>
             <Button onClick={handleSubmit} variant="contained">
               Cập nhật
@@ -540,8 +534,14 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               </Button>
             ) : (
               <>
-                <Button onClick={handleCloseSession} variant="contained" sx={{ width: '100%' }} color={'error'}>
-                  {'Đóng phiên'}
+                <Button
+                  onClick={handleCloseSession}
+                  variant="contained"
+                  sx={{ width: '100%' }}
+                  color={'error'}
+                  disabled={isClosingSession} // Disable button while loading
+                >
+                  {isClosingSession ? <CircularProgress size={24} /> : 'Đóng phiên'}
                 </Button>
                 <Button onClick={handleEnableBetting} variant="outlined" sx={{ width: '100%' }} color={'success'}>
                   {'Mở cược'}
@@ -569,6 +569,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               variant={selectResult === BetResultEnum.CANCEL ? 'contained' : 'outlined'}
               color="warning"
               onClick={() => setSelectResult(BetResultEnum.CANCEL)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               Hủy
             </Button>
@@ -576,6 +577,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               variant={selectResult === BetResultEnum.DRAW ? 'contained' : 'outlined'}
               color="secondary"
               onClick={() => setSelectResult(BetResultEnum.DRAW)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               Hòa
             </Button>
@@ -583,6 +585,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               variant={selectResult === TeamEnum.RED ? 'contained' : 'outlined'}
               color="error"
               onClick={() => setSelectResult(TeamEnum.RED)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               {formData?.redName || 'Đội Đỏ'}
             </Button>
@@ -590,23 +593,33 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
               variant={selectResult === TeamEnum.BLUE ? 'contained' : 'outlined'}
               color="primary"
               onClick={() => setSelectResult(TeamEnum.BLUE)}
+              disabled={isClosingSession} // Disable buttons while loading
             >
               {formData?.blueName || 'Đội Xanh'}
             </Button>
           </Box>
+          {isClosingSession && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <CircularProgress />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenWinnerDialog(false)} color="primary">
+          <Button
+            onClick={() => setOpenWinnerDialog(false)}
+            color="primary"
+            disabled={isClosingSession} // Disable cancel button while loading
+          >
             Hủy
           </Button>
           <Button
             onClick={handleConfirmCloseSession}
             color="primary"
-            disabled={!selectResult}
+            disabled={!selectResult || isClosingSession} // Disable confirm button while loading
             variant="contained"
             autoFocus
           >
-            Xác nhận
+            {isClosingSession ? <CircularProgress size={24} /> : 'Xác nhận'}
           </Button>
         </DialogActions>
       </Dialog>
