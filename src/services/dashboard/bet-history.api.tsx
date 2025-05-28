@@ -1,5 +1,10 @@
 import axiosCustomize from '@/utils/axios/axios.customize';
 
+export const findAllBetHistoryApi = async (query: string) => {
+  const res = await axiosCustomize.get(`/bet-history`);
+  return res;
+};
+
 export const paginateBetHistoryApi = async (id: string, query: string) => {
   const res = await axiosCustomize.get(`/bet-history/${id}/paginate?${query}`);
   return res;

@@ -1,73 +1,216 @@
 'use client';
 
 import * as React from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
+import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material';
 import type { SxProps } from '@mui/material/styles';
-import Typography from '@mui/material/Typography';
-import type { Icon } from '@phosphor-icons/react/dist/lib/types';
-import { Desktop as DesktopIcon } from '@phosphor-icons/react/dist/ssr/Desktop';
-import { DeviceTablet as DeviceTabletIcon } from '@phosphor-icons/react/dist/ssr/DeviceTablet';
-import { Phone as PhoneIcon } from '@phosphor-icons/react/dist/ssr/Phone';
-import type { ApexOptions } from 'apexcharts';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { DatePicker } from '@mui/x-date-pickers';
+import dayjs, { Dayjs } from 'dayjs';
 
-import { Chart } from '@/components/core/chart';
-
-const iconMapping = { Desktop: DesktopIcon, Tablet: DeviceTabletIcon, Phone: PhoneIcon } as Record<string, Icon>;
-
-export interface TrafficProps {
-  chartSeries: number[];
+export interface FilterProps {
+  betHistories: BettingHistoryInterface[];
   labels: string[];
   sx?: SxProps;
+  onFilterChange?: (filters: {
+    filterType: string;
+    year: number;
+    month?: number;
+    week?: number;
+    startDate?: Dayjs;
+    endDate?: Dayjs;
+  }) => void;
 }
 
-export function Traffic({ chartSeries, labels, sx }: TrafficProps): React.JSX.Element {
-  const chartOptions = useChartOptions(labels);
+// Custom theme for consistent styling
+const theme = createTheme({
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          maxWidth: 400,
+          width: '100%',
+          margin: 'auto',
+        },
+      },
+    },
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          minWidth: 120,
+          width: '100%',
+        },
+      },
+    },
+  },
+});
+
+export function Filter({ betHistories, labels, sx, onFilterChange }: FilterProps): React.JSX.Element {
+  const [filterType, setFilterType] = React.useState('week');
+  const [selectedYear, setSelectedYear] = React.useState(dayjs().year());
+  const [selectedMonth, setSelectedMonth] = React.useState<number | null>(null);
+  const [selectedWeek, setSelectedWeek] = React.useState<number | null>(null);
+  const [startDate, setStartDate] = React.useState<Dayjs | null>(dayjs().startOf('month'));
+  const [endDate, setEndDate] = React.useState<Dayjs | null>(dayjs().endOf('month'));
+
+  // Extract available years, months, and weeks from labels
+  const availableYears = React.useMemo(() => {
+    const years = new Set<number>();
+    labels.forEach((label) => {
+      const year = dayjs(label).year();
+      if (!isNaN(year)) years.add(year);
+    });
+    return Array.from(years).sort((a, b) => a - b);
+  }, [labels]);
+
+  const availableMonths = React.useMemo(() => {
+    if (filterType !== 'month' && filterType !== 'week') return [];
+    const months = new Set<number>();
+    labels.forEach((label) => {
+      const date = dayjs(label);
+      if (date.year() === selectedYear) months.add(date.month() + 1);
+    });
+    return Array.from(months).sort((a, b) => a - b);
+  }, [labels, selectedYear, filterType]);
+
+  const availableWeeks = React.useMemo(() => {
+    if (filterType !== 'week') return [];
+    const weeks = new Set<number>();
+    labels.forEach((label) => {
+      const date = dayjs(label) as any;
+      if (date.year() === selectedYear && (!selectedMonth || date.month() + 1 === selectedMonth)) {
+        weeks.add(date.week());
+      }
+    });
+    return Array.from(weeks).sort((a, b) => a - b);
+  }, [labels, selectedYear, selectedMonth, filterType]);
+
+  // Notify parent of filter changes
+  React.useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({
+        filterType,
+        year: selectedYear,
+        month: selectedMonth || undefined,
+        week: selectedWeek || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+    }
+  }, [filterType, selectedYear, selectedMonth, selectedWeek, startDate, endDate]);
 
   return (
-    <Card sx={sx}>
-      <CardHeader title="Traffic source" />
-      <CardContent>
-        <Stack spacing={2}>
-          <Chart height={300} options={chartOptions} series={chartSeries} type="donut" width="100%" />
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'center' }}>
-            {chartSeries.map((item, index) => {
-              const label = labels[index];
-              const Icon = iconMapping[label];
+    <ThemeProvider theme={theme}>
+      <Card sx={sx}>
+        <CardHeader title="Filter Options" />
+        <CardContent>
+          <Stack spacing={2}>
+            {/* Filter Type */}
+            <FormControl>
+              <InputLabel id="filter-type-label">Filter Type</InputLabel>
+              <Select
+                labelId="filter-type-label"
+                value={filterType}
+                label="Filter Type"
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  setSelectedMonth(null);
+                  setSelectedWeek(null);
+                }}
+              >
+                <MenuItem value="week">By Week</MenuItem>
+                <MenuItem value="month">By Month</MenuItem>
+                <MenuItem value="year">By Year</MenuItem>
+              </Select>
+            </FormControl>
 
-              return (
-                <Stack key={label} spacing={1} sx={{ alignItems: 'center' }}>
-                  {Icon ? <Icon fontSize="var(--icon-fontSize-lg)" /> : null}
-                  <Typography variant="h6">{label}</Typography>
-                  <Typography color="text.secondary" variant="subtitle2">
-                    {item}%
-                  </Typography>
-                </Stack>
-              );
-            })}
+            {/* Year */}
+            <FormControl>
+              <InputLabel id="year-label">Year</InputLabel>
+              <Select
+                labelId="year-label"
+                value={selectedYear}
+                label="Year"
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+              >
+                {availableYears.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Month (only for month/week filter) */}
+            {(filterType === 'month' || filterType === 'week') && (
+              <FormControl>
+                <InputLabel id="month-label">Month</InputLabel>
+                <Select
+                  labelId="month-label"
+                  value={selectedMonth ?? ''}
+                  label="Month"
+                  onChange={(e) => {
+                    const month = Number(e.target.value);
+                    setSelectedMonth(month);
+                    setSelectedWeek(null);
+                  }}
+                >
+                  {availableMonths.map((month) => (
+                    <MenuItem key={month} value={month}>
+                      {`Month ${month}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* Week (only for week filter) */}
+            {filterType === 'week' && (
+              <FormControl>
+                <InputLabel id="week-label">Week</InputLabel>
+                <Select
+                  labelId="week-label"
+                  value={selectedWeek ?? ''}
+                  label="Week"
+                  onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                >
+                  {availableWeeks.map((week) => (
+                    <MenuItem key={week} value={week}>
+                      {`Week ${week}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {/* Start Date */}
+            <DatePicker
+              label="Start Date"
+              value={startDate}
+              onChange={(date) => setStartDate(date)}
+              slotProps={{ textField: { fullWidth: true } }}
+            />
+
+            {/* End Date */}
+            <DatePicker
+              label="End Date"
+              value={endDate}
+              onChange={(date) => setEndDate(date)}
+              slotProps={{ textField: { fullWidth: true } }}
+            />
           </Stack>
-        </Stack>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </ThemeProvider>
   );
-}
-
-function useChartOptions(labels: string[]): ApexOptions {
-  const theme = useTheme();
-
-  return {
-    chart: { background: 'transparent' },
-    colors: [theme.palette.primary.main, theme.palette.success.main, theme.palette.warning.main],
-    dataLabels: { enabled: false },
-    labels,
-    legend: { show: false },
-    plotOptions: { pie: { expandOnClick: false } },
-    states: { active: { filter: { type: 'none' } }, hover: { filter: { type: 'none' } } },
-    stroke: { width: 0 },
-    theme: { mode: theme.palette.mode },
-    tooltip: { fillSeriesColor: false },
-  };
 }

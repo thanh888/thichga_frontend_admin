@@ -15,12 +15,12 @@ import type { ApexOptions } from 'apexcharts';
 
 import { Chart } from '@/components/core/chart';
 
-export interface SalesProps {
+export interface RevenueProps {
   chartSeries: { name: string; data: number[] }[];
   sx?: SxProps;
 }
 
-export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
+export function RevenueLine({ chartSeries, sx }: RevenueProps): React.JSX.Element {
   const chartOptions = useChartOptions();
 
   return (
@@ -34,7 +34,7 @@ export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
         title="Biểu đồ doanh thu"
       />
       <CardContent>
-        <Chart height={350} options={chartOptions} series={chartSeries} type="bar" width="100%" />
+        <Chart height={350} options={chartOptions} series={chartSeries} type="line" width="100%" />
       </CardContent>
       <Divider />
       <CardActions sx={{ justifyContent: 'flex-end' }}>
@@ -62,7 +62,7 @@ function useChartOptions(): ApexOptions {
     },
     legend: { show: false },
     plotOptions: { bar: { columnWidth: '40px' } },
-    stroke: { colors: ['transparent'], show: true, width: 2 },
+    stroke: { colors: ['#247BA0'], show: true, width: 2 },
     theme: { mode: theme.palette.mode },
     xaxis: {
       axisBorder: { color: theme.palette.divider, show: true },
