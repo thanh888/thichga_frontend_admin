@@ -5,8 +5,18 @@ export const findAllRevenueApi = async (query: string) => {
   return res;
 };
 
-export const paginateRevenueApi = async (query: string) => {
-  const res = await axiosCustomize.get(`/revenue/paginate?${query}`);
+export const deleteRevenueById = async (id: string) => {
+  const res = await axiosCustomize.delete(`/revenue/${id}`);
+  return res;
+};
+
+export const paginateTotalRevenueApi = async (query: string) => {
+  const res = await axiosCustomize.get(`/revenue/paginate-total?${query}`);
+  return res;
+};
+
+export const paginateRevenueByDateCloseApi = async (query: string) => {
+  const res = await axiosCustomize.get(`/revenue/date-close-paginate?${query}`);
   return res;
 };
 

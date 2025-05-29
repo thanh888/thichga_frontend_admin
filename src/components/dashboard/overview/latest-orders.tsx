@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { paginateRevenueApi } from '@/services/dashboard/revenue.api'; // Giả định API
+import { paginateTotalRevenueApi } from '@/services/dashboard/revenue.api'; // Giả định API
 
 import { BettingRevenueInterface } from '@/utils/interfaces/revenue.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
@@ -60,7 +60,7 @@ export function RevenueTable(): React.JSX.Element {
     try {
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.dateClose}&typeRevenue=${filter.typeRevenue}&sort=${sortQuery}`;
-      const response = await paginateRevenueApi(query);
+      const response = await paginateTotalRevenueApi(query);
       if (response.status === 200 || response.status === 201) {
         setRevenues(response.data);
       }
@@ -229,7 +229,7 @@ export function RevenueTable(): React.JSX.Element {
                     variant="contained"
                     color="success"
                     sx={{ mr: 1 }}
-                    onClick={() => router.push(`revenues/${row._id}`)}
+                    onClick={() => router.push(`dashboard/revenue/${row.dateClose.replace(/\//g, '-')}`)}
                   >
                     Chi tiết
                   </Button>

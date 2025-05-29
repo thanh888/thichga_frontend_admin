@@ -1,6 +1,7 @@
 import { BetHistoryStatusEnum } from '../enum/bet-history-status.enum';
 import { BetResultEnum } from '../enum/bet-result.enum';
 import { RoleUsers } from '../enum/role.enum';
+import { TypeRevenueEnum } from '../enum/type-revenue.enum';
 import { UserStatus } from '../enum/user-status.enum';
 
 export function CheckFormDataNull(formData: any, setFormError: any) {
@@ -58,6 +59,12 @@ export const listResultHistory = [
   { value: BetResultEnum.WIN, label: 'Thắng' },
   { value: BetResultEnum.LOSE, label: 'Thua' },
   { value: BetResultEnum.REFUDNED, label: 'Hoàn tiền' },
+] as const;
+
+export const listRevenueType = [
+  { value: TypeRevenueEnum.BET, label: 'Cược' },
+  { value: TypeRevenueEnum.DEPOSIT, label: 'Nạp' },
+  { value: TypeRevenueEnum.WITHDRAW, label: 'Rút' },
 ] as const;
 
 export const odds = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];

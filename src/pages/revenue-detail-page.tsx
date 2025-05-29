@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateRevenueApi } from '@/services/dashboard/revenue.api';
+import { deleteRevenueById, paginateRevenueByDateCloseApi } from '@/services/dashboard/revenue.api';
+import { listRevenueType, numberThousandFload } from '@/utils/functions/default-function';
 import {
   Box,
   Button,
@@ -25,15 +26,19 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
 
 // Define interface for revenue data
 export interface RevenueFormData {
+  _id: string;
   dateClose: string;
   revenue: number;
   expense: number;
   profit: number;
   betMoney: number;
   typeRevenue?: string;
+  totalDeposits: number;
+  totalWithdraw: number;
 }
 
 // Define interface for table columns
@@ -66,13 +71,25 @@ const columns: Column[] = [
   },
   {
     id: 'profit',
-    label: 'Lợi nhuận',
+    label: 'Hoa hồng',
     minWidth: 100,
     align: 'right',
   },
   {
     id: 'betMoney',
     label: 'Tiền cược',
+    minWidth: 100,
+    align: 'right',
+  },
+  {
+    id: 'totalDeposits',
+    label: 'Tiền nạp',
+    minWidth: 100,
+    align: 'right',
+  },
+  {
+    id: 'totalWithdraw',
+    label: 'Tiền rút',
     minWidth: 100,
     align: 'right',
   },
@@ -91,21 +108,25 @@ export default function RevenueByDateTable(): React.JSX.Element {
 
   const router = useRouter();
   const params = useParams();
-  const dateClose = params?.dateClose?.toString(); // Lấy dateClose từ URL (ví dụ: 2025-05-29)
+  const dateClose = params?.id?.toString(); // Lấy dateClose từ URL (ví dụ: 2025-05-29)
+
+  const [isReload, setIsReload] = React.useState<boolean>(true);
 
   const fetchRevenues = async () => {
     setIsLoading(true);
+    console.log(dateClose);
+
     setError('');
     try {
       if (!dateClose) {
-        setError('Không tìm thấy ngày đóng');
+        setError('Không tìm thấy dữ liệu');
         setIsLoading(false);
         return;
       }
       const formattedDateClose = dateClose.replace(/-/g, '/'); // Chuyển 2025-05-29 thành 2025/05/29
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
       const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${formattedDateClose}&typeRevenue=${filter.typeRevenue}&sort=${sortQuery}`;
-      const response = await paginateRevenueApi(query);
+      const response = await paginateRevenueByDateCloseApi(query);
       if (response.status === 200 || response.status === 201) {
         setRevenues(response.data);
       } else {
@@ -122,6 +143,15 @@ export default function RevenueByDateTable(): React.JSX.Element {
   React.useEffect(() => {
     fetchRevenues();
   }, [filter, page, rowsPerPage, order, orderBy, dateClose]);
+
+  React.useEffect(() => {
+    console.log('==========');
+
+    if (isReload) {
+      fetchRevenues();
+      setIsReload(false);
+    }
+  }, [isReload]);
 
   const handleRequestSort = (property: keyof RevenueFormData) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -146,8 +176,14 @@ export default function RevenueByDateTable(): React.JSX.Element {
     setPage(0);
   };
 
-  const handleViewDetail = (dateClose: string) => {
-    router.push(`/revenues/${dateClose.replace(/\//g, '-')}`);
+  const handleDeleteRevenue = async (id: string) => {
+    try {
+      const response = await deleteRevenueById(id);
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Xóa thành công');
+      }
+    } catch (error) {}
+    toast.error('Xóa thất bại');
   };
 
   if (isLoading) {
@@ -174,25 +210,7 @@ export default function RevenueByDateTable(): React.JSX.Element {
       <Typography variant="h5" sx={{ marginTop: 1, marginLeft: 1 }}>
         Doanh thu ngày {dateClose?.replace(/-/g, '/')}
       </Typography>
-      <Box sx={{ p: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <TextField
-          label="Tìm theo ngày đóng (YYYY/MM/DD)"
-          name="dateClose"
-          value={filter.dateClose}
-          onChange={handleFilterChange}
-          size="small"
-          sx={{ width: '50%' }}
-        />
-        <FormControl sx={{ width: '50%' }} size="small">
-          <InputLabel>Loại doanh thu</InputLabel>
-          <Select label="Loại doanh thu" name="typeRevenue" value={filter.typeRevenue} onChange={handleFilterChange}>
-            <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value="BET">Bet</MenuItem>
-            <MenuItem value="DEPOSIT">Deposit</MenuItem>
-            <MenuItem value="WITHDRAW">Withdraw</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+
       <Box sx={{ overflowX: 'auto' }}>
         <Table>
           <TableHead>
@@ -222,16 +240,35 @@ export default function RevenueByDateTable(): React.JSX.Element {
                   </Stack>
                 </TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'revenue')?.format?.(row.revenue) || row.revenue}
+                  <Typography variant="body2" sx={{ color: '#635bff', fontWeight: 600 }}>
+                    {row?.revenue > 0 && '+'} {numberThousandFload(row?.revenue ?? '0') ?? 0}
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'expense')?.format?.(row.expense) || row.expense}
+                  <Typography variant="body2" sx={{ color: '#f04438', fontWeight: 600 }}>
+                    {numberThousandFload(row?.expense) ?? 0}
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'profit')?.format?.(row.profit) || row.profit}
+                  <Typography variant="body2" sx={{ color: '#15b79f', fontWeight: 600 }}>
+                    {row?.profit >= 0 ? '+' : '-'}
+                    {numberThousandFload(row?.profit) ?? 0}
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  {columns.find((col) => col.id === 'betMoney')?.format?.(row.betMoney) || row.betMoney}
+                  <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 600 }}>
+                    {numberThousandFload(row?.betMoney) ?? 0}
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" sx={{ color: '#2196f3', fontWeight: 600 }}>
+                    {numberThousandFload(row?.totalDeposits) ?? 0}
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" sx={{ color: '#f44336', fontWeight: 600 }}>
+                    {numberThousandFload(row?.totalWithdraw) ?? 0}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography
@@ -247,12 +284,14 @@ export default function RevenueByDateTable(): React.JSX.Element {
                     }
                     sx={{ p: 1, borderRadius: 1, fontWeight: 500, color: 'white' }}
                   >
-                    {row.typeRevenue || 'Không xác định'}
+                    {row.typeRevenue
+                      ? listRevenueType.find((item: any) => item.value === row.typeRevenue)?.label || 'Không xác định'
+                      : 'Không xác định'}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
-                  <Button variant="contained" color="primary" onClick={() => handleViewDetail(row.dateClose)}>
-                    Chi tiết
+                  <Button variant="contained" color="error" onClick={() => handleDeleteRevenue(row._id)}>
+                    Xóa
                   </Button>
                 </TableCell>
               </TableRow>
