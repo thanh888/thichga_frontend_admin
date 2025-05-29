@@ -1,22 +1,27 @@
 // Interface for the BettingRevenue document
 export interface BettingRevenueInterface {
+  _id: string;
   // Total revenue (including fees)
-  total_revenue?: number;
+  profit?: number;
 
   // Total fees collected
-  fee?: number;
+  betMoney?: number;
 
   // Total amount bet by players
-  total_bet_amount?: number;
+  expense?: number;
+
+  revenue?: number;
+  totalDeposits?: number;
+  totalWithdraws?: number;
 
   // ID of the associated betting room
-  betRoomID?: string;
+  dateClose?: string;
 
   // ID of the associated betting session
-  betSessionID?: string;
+  typeRevenue?: string;
 
   // ID of the associated bet option
-  betOptionID?: string;
+  roomName?: string;
 
   // Timestamp when the revenue record was created
   createdAt?: Date;

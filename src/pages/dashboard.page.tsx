@@ -1,40 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import type { Metadata } from 'next';
 import { findAllBetHistoryApi } from '@/services/dashboard/bet-history.api';
+import { findAllRevenueApi } from '@/services/dashboard/revenue.api';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
+import { BettingRevenueInterface } from '@/utils/interfaces/revenue.interface';
 import Grid from '@mui/material/Unstable_Grid2';
 import dayjs from 'dayjs';
 
 import { Budget } from '@/components/dashboard/overview/budget';
-import { LatestOrders } from '@/components/dashboard/overview/latest-orders';
+import { RevenueTable } from '@/components/dashboard/overview/latest-orders';
 import { LatestProducts } from '@/components/dashboard/overview/latest-products';
-import { RevenueLine } from '@/components/dashboard/overview/line-revenue';
-import { Sales } from '@/components/dashboard/overview/sales';
+import { TotalLineChart } from '@/components/dashboard/overview/line-revenue';
 import { TasksProgress } from '@/components/dashboard/overview/tasks-progress';
+import { TotalColumnChart } from '@/components/dashboard/overview/total-column-chart';
 import { TotalCustomers } from '@/components/dashboard/overview/total-customers';
 import { TotalProfit } from '@/components/dashboard/overview/total-profit';
 import { Filter } from '@/components/dashboard/overview/traffic';
 
 export default function HomePage(): React.JSX.Element {
-  const [betHistories, setBetHistories] = React.useState<BettingHistoryInterface[]>([]);
-
-  const getHistories = async () => {
-    try {
-      const response = await findAllBetHistoryApi('');
-      if (response.status === 200 || response.status === 201) {
-        setBetHistories(response.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  React.useEffect(() => {
-    getHistories();
-  }, []);
-
   return (
     <Grid container spacing={3}>
       <Grid lg={3} sm={6} xs={12}>
@@ -49,79 +33,19 @@ export default function HomePage(): React.JSX.Element {
       <Grid lg={3} sm={6} xs={12}>
         <TotalProfit sx={{ height: '100%' }} value="$15k" />
       </Grid>
-      <Grid lg={4} md={6} xs={12}>
-        <Filter betHistories={betHistories} labels={['Desktop', 'Tablet', 'Phone']} sx={{ height: '100%' }} />
-      </Grid>
-      <Grid lg={8} xs={12}>
-        <Sales
-          chartSeries={[
-            { name: 'This year', data: [18, 16, 5, 8, 3, 14, 14, 16, 17, 19, 18, 20] },
-            { name: 'Last year', data: [12, 11, 4, 6, 2, 9, 9, 10, 11, 12, 13, 13] },
-          ]}
-          sx={{ height: '100%' }}
-        />
+      {/* <Grid lg={4} md={6} xs={12}> */}
+      {/* <Filter betHistories={betHistories}} sx={{ height: '100%' }} /> */}
+      {/* </Grid> */}
+      <Grid lg={6} xs={12}>
+        <TotalColumnChart sx={{ height: '100%' }} />
       </Grid>
 
-      <Grid lg={8} xs={12}>
-        <RevenueLine
-          chartSeries={[
-            { name: 'This year', data: [18, 16, 5, 8, 3, 14, 14, 16, 17, 19, 18, 20] },
-            { name: 'Last year', data: [12, 11, 4, 6, 2, 9, 9, 10, 11, 12, 13, 13] },
-          ]}
-          sx={{ height: '100%' }}
-        />
+      <Grid lg={6} xs={12}>
+        <TotalLineChart sx={{ height: '100%' }} />
       </Grid>
-      <Grid lg={4} md={6} xs={12}>
-        <LatestProducts products={[]} sx={{ height: '100%' }} />
-      </Grid>
-      <Grid lg={8} md={12} xs={12}>
-        <LatestOrders
-          orders={[
-            {
-              id: 'ORD-007',
-              customer: { name: 'Ekaterina Tankova' },
-              amount: 30.5,
-              status: 'pending',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-            {
-              id: 'ORD-006',
-              customer: { name: 'Cao Yu' },
-              amount: 25.1,
-              status: 'delivered',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-            {
-              id: 'ORD-004',
-              customer: { name: 'Alexa Richardson' },
-              amount: 10.99,
-              status: 'refunded',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-            {
-              id: 'ORD-003',
-              customer: { name: 'Anje Keizer' },
-              amount: 96.43,
-              status: 'pending',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-            {
-              id: 'ORD-002',
-              customer: { name: 'Clarke Gillebert' },
-              amount: 32.54,
-              status: 'delivered',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-            {
-              id: 'ORD-001',
-              customer: { name: 'Adam Denisov' },
-              amount: 16.76,
-              status: 'delivered',
-              createdAt: dayjs().subtract(10, 'minutes').toDate(),
-            },
-          ]}
-          sx={{ height: '100%' }}
-        />
+
+      <Grid lg={21} md={12} xs={12}>
+        <RevenueTable />
       </Grid>
     </Grid>
   );
