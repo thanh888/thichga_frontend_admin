@@ -9,9 +9,9 @@ import Grid from '@mui/material/Unstable_Grid2';
 import dayjs from 'dayjs';
 
 import { Budget } from '@/components/dashboard/overview/budget';
-import { RevenueTable } from '@/components/dashboard/overview/latest-orders';
 import { LatestProducts } from '@/components/dashboard/overview/latest-products';
 import { TotalLineChart } from '@/components/dashboard/overview/line-revenue';
+import { RevenueTable } from '@/components/dashboard/overview/revenue-table';
 import { TasksProgress } from '@/components/dashboard/overview/tasks-progress';
 import { TotalColumnChart } from '@/components/dashboard/overview/total-column-chart';
 import { TotalCustomers } from '@/components/dashboard/overview/total-customers';
@@ -33,9 +33,6 @@ export default function HomePage(): React.JSX.Element {
       <Grid lg={3} sm={6} xs={12}>
         <TotalProfit sx={{ height: '100%' }} value="$15k" />
       </Grid>
-      {/* <Grid lg={4} md={6} xs={12}> */}
-      {/* <Filter betHistories={betHistories}} sx={{ height: '100%' }} /> */}
-      {/* </Grid> */}
       <Grid lg={6} xs={12}>
         <TotalColumnChart sx={{ height: '100%' }} />
       </Grid>

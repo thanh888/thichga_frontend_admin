@@ -87,15 +87,15 @@ export function TotalColumnChart({ sx }: Props): React.JSX.Element {
       <CardContent>
         <div style={{ marginBottom: '16px' }}>
           <FormControl sx={{ minWidth: 120, marginRight: 2 }}>
-            <InputLabel>Period</InputLabel>
+            <InputLabel>Lọc kiểu</InputLabel>
             <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Period">
-              <MenuItem value="day">Day</MenuItem>
-              <MenuItem value="month">Month</MenuItem>
-              <MenuItem value="year">Year</MenuItem>
+              <MenuItem value="day">Ngày</MenuItem>
+              <MenuItem value="month">Tháng</MenuItem>
+              <MenuItem value="year">Năm</MenuItem>
             </Select>
           </FormControl>
           <TextField
-            label={period === 'day' ? 'Select Date' : period === 'month' ? 'Select Month' : 'Select Year'}
+            label={period === 'day' ? 'Chọn ngày' : period === 'month' ? 'Chọn tháng' : 'Chọn năm'}
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
@@ -149,10 +149,12 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       toolbar: { show: false },
     },
     colors: [
-      theme.palette.primary.main, // Total Profit
-      alpha(theme.palette.primary.main, 0.5), // Total Revenue
-      theme.palette.success.main, // Total Bet Money
-      theme.palette.error.main, // Total Expense
+      '#1976D2', // Total Profit - Deep Blue
+      '#64B5F6', // Total Revenue - Light Blue
+      '#4CAF50', // Total Bet Money - Green
+      '#D32F2F', // Total Expense - Red
+      '#26A69A', // Total Deposits - Teal
+      '#AB47BC', // Total Withdraw - Purple
     ],
     dataLabels: { enabled: false },
     fill: { opacity: 1, type: 'solid' },
@@ -168,7 +170,7 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       labels: { colors: theme.palette.text.secondary },
     },
     plotOptions: {
-      bar: { columnWidth: '50%' }, // Hẹp cột để phù hợp với một khoảng thời gian
+      bar: { columnWidth: '50%' },
     },
     stroke: { colors: ['transparent'], show: true, width: 2 },
     theme: { mode: theme.palette.mode },
@@ -198,7 +200,7 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       { name: 'Tổng Tiền Cược', data: totalBetMoney },
       { name: 'Tổng Chi Phí', data: totalExpense },
       { name: 'Tổng Nạp', data: totalDeposits },
-      { name: 'Tổng rút', data: totalWithdraw },
+      { name: 'Tổng Rút', data: totalWithdraw },
     ],
   };
 
