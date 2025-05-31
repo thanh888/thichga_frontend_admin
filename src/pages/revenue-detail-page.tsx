@@ -124,7 +124,7 @@ export default function RevenueByDateTable(): React.JSX.Element {
       }
       const formattedDateClose = dateClose.replace(/-/g, '/'); // Chuyển 2025-05-29 thành 2025/05/29
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${formattedDateClose}&typeRevenue=${filter.typeRevenue}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${formattedDateClose}&typeRevenue=${filter.typeRevenue}&sort=${sortQuery}`;
       const response = await paginateRevenueByDateCloseApi(query);
       if (response.status === 200 || response.status === 201) {
         setRevenues(response.data);

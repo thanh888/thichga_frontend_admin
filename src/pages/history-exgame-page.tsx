@@ -90,7 +90,7 @@ export default function HistoryOptionExGamePage(): React.JSX.Element {
         return;
       }
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&status=${filter.status}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.code}&status=${filter.status}&sort=${sortQuery}`;
       const response = await findAllBetHistoryByOptionApi(optionID, query);
       if (response.status === 200 || response.status === 201) {
         setBets(response.data);

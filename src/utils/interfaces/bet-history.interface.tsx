@@ -6,7 +6,8 @@ import { TeamEnum } from '../enum/team.enum';
 export interface BettingHistoryInterface {
   _id: string;
   // ID of the betting session associated with this history
-  betSessionID?: string;
+  betSessionID?: string | any;
+  betRoomID?: string | any;
 
   // ID of the user who created the bet
   creatorID?: any;

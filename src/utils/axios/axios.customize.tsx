@@ -12,7 +12,7 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
   function (config) {
-    const token = localStorage.getItem('account');
+    const token = localStorage.getItem('account_admin');
     config.headers.Authorization = `Bearer ${token}`;
     return config;
   },

@@ -2,28 +2,50 @@
 
 import * as React from 'react';
 import type { Metadata } from 'next';
+import { useParams } from 'next/navigation';
+import { getUserById } from '@/services/dashboard/user.api';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
-import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 
 import { config } from '@/config';
-import CreateUser from '@/components/dashboard/users/create-user.dialog';
-import { UserFormData, UsersTable } from '@/components/dashboard/users/user-table';
+import UserBettingHistoriesTable from '@/components/dashboard/users/history-betting.table';
 
 export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
 
-export default function UsersPage(): React.JSX.Element {
-  const [openCreate, setOpenCreate] = React.useState<boolean>(false);
-  const [isReload, setIsReload] = React.useState<boolean>(true);
+export default function UserBetHistoriesPage(): React.JSX.Element {
+  const params = useParams();
+  const user_id = params?.user_id?.toString();
+  const [userCreate, setUserCreate] = React.useState<UserInterface>();
+
+  const getUser = async () => {
+    if (!user_id) {
+      return;
+    }
+    try {
+      const response = await getUserById(user_id);
+      if (response.status === 200 || response.status === 201) {
+        setUserCreate(response.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (user_id) {
+      getUser();
+    }
+  }, [user_id]);
 
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={3}>
         <Stack spacing={1} sx={{ flex: '1 1 auto' }}>
-          <Typography variant="h4">Quản lý người dùng</Typography>
+          <Typography variant="h4">Lịch sử cược người dùng: {userCreate?.username}</Typography>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button color="inherit" startIcon={<UploadIcon fontSize="var(--icon-fontSize-md)" />}>
               Import
@@ -33,18 +55,8 @@ export default function UsersPage(): React.JSX.Element {
             </Button>
           </Stack>
         </Stack>
-        <div>
-          <Button
-            startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
-            onClick={() => setOpenCreate(!openCreate)}
-            variant="contained"
-          >
-            Thêm người dùng
-          </Button>
-        </div>
       </Stack>
-      <UsersTable isReload={isReload} setIsReload={setIsReload} />
-      <CreateUser openCreate={openCreate} setOpenCreate={setOpenCreate} isReload={isReload} setIsReload={setIsReload} />
+      {user_id && <UserBettingHistoriesTable user_id={user_id} />}
     </Stack>
   );
 }
