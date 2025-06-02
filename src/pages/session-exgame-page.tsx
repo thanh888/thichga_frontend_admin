@@ -83,7 +83,7 @@ export default function SessionExGamePage(): React.JSX.Element {
         return;
       }
       const sortQuery = order === 'asc' ? orderBy : `-${orderBy}`;
-      const query = `limit=${rowsPerPage}&skip=${page * rowsPerPage}&search=${filter.code}&selectedTeam=${filter.selectedTeam}&sort=${sortQuery}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${filter.code}&selectedTeam=${filter.selectedTeam}&sort=${sortQuery}`;
       const response = await paginateOptionByExGameeSessionApi(sessionID, query);
       if (response.status === 200 || response.status === 201) {
         setBets(response.data);

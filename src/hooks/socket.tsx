@@ -8,7 +8,7 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   let accessToken = '';
   if (typeof window !== 'undefined') {
-    accessToken = localStorage.getItem('account') || '';
+    accessToken = localStorage.getItem('account_admin') || '';
   }
   useEffect(() => {
     if (!accessToken) return;

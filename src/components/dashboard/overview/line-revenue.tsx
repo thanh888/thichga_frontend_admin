@@ -79,15 +79,15 @@ export function TotalLineChart({ sx }: Props): React.JSX.Element {
       <CardContent>
         <div style={{ marginBottom: '16px' }}>
           <FormControl sx={{ minWidth: 120, marginRight: 2 }}>
-            <InputLabel>Period</InputLabel>
+            <InputLabel>Lọc kiểu</InputLabel>
             <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Period">
-              <MenuItem value="week">Week</MenuItem>
-              <MenuItem value="month">Month</MenuItem>
-              <MenuItem value="year">Year</MenuItem>
+              <MenuItem value="week">Tuần`</MenuItem>
+              <MenuItem value="month">Tháng</MenuItem>
+              <MenuItem value="year">Năm</MenuItem>
             </Select>
           </FormControl>
           <TextField
-            label="Start Date"
+            label="Ngày bắt đầu"
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -95,7 +95,7 @@ export function TotalLineChart({ sx }: Props): React.JSX.Element {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="End Date"
+            label="Ngày kết thúc"
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
@@ -134,6 +134,8 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
   const totalRevenue = revenues.map((item) => item.totalRevenue || 0);
   const totalBetMoney = revenues.map((item) => item.totalBetMoney || 0);
   const totalExpense = revenues.map((item) => item.totalExpense || 0);
+  const totalDeposits = revenues.map((item) => item.totalDeposits || 0);
+  const totalWithdraw = revenues.map((item) => item.totalWithdraw || 0);
 
   const chartOptions: ApexOptions = {
     chart: {
@@ -142,14 +144,16 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       zoom: { enabled: true },
     },
     colors: [
-      theme.palette.primary.main, // Total Profit
-      alpha(theme.palette.primary.main, 0.5), // Total Revenue
-      theme.palette.success.main, // Total Bet Money
-      theme.palette.error.main, // Total Expense
+      '#1976D2', // Total Profit - Deep Blue
+      '#64B5F6', // Total Revenue - Light Blue
+      '#4CAF50', // Total Bet Money - Green
+      '#D32F2F', // Total Expense - Red
+      '#26A69A', // Total Deposits - Teal
+      '#AB47BC', // Total Withdraw - Purple
     ],
     dataLabels: { enabled: false },
     stroke: {
-      curve: 'smooth', // Đường cong mượt
+      curve: 'smooth', // Smooth curve for lines
       width: 3,
     },
     fill: { opacity: 1 },
@@ -165,7 +169,7 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       labels: { colors: theme.palette.text.secondary },
     },
     markers: {
-      size: 5, // Hiển thị điểm trên đường
+      size: 5, // Show points on lines
       hover: { size: 8 },
     },
     xaxis: {
@@ -174,7 +178,7 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       categories,
       labels: {
         style: { colors: theme.palette.text.secondary },
-        rotate: -45, // Xoay nhãn nếu quá dài
+        rotate: -45, // Rotate labels if too long
       },
     },
     yaxis: {
@@ -190,10 +194,12 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       },
     },
     series: [
-      { name: 'Tổng Lợi Nhuận', data: totalProfit },
+      { name: 'Tổng Hoa Hồng', data: totalProfit },
       { name: 'Tổng Doanh Thu', data: totalRevenue },
       { name: 'Tổng Tiền Cược', data: totalBetMoney },
       { name: 'Tổng Chi Phí', data: totalExpense },
+      { name: 'Tổng Nạp', data: totalDeposits },
+      { name: 'Tổng Rút', data: totalWithdraw },
     ],
   };
 

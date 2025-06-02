@@ -14,6 +14,8 @@ export const paths = {
     histories_exgame: '/dashboard/histories-exgame',
     deposit_mode: '/dashboard/deposit-mode',
     deposits: '/dashboard/deposits',
+    user_deposit_withdraw: '/dashboard/users/deposit-withdraw',
+    user_bet_history: '/dashboard/users/bet-history',
     auto_deposits: '/dashboard/auto-deposit',
     withdraws: '/dashboard/withdraws',
     bank: '/dashboard/bank',

@@ -32,7 +32,7 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('account');
+        localStorage.removeItem('account_admin');
       }
       const response = await SignOutApi();
       if (response) {

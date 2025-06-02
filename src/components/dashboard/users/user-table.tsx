@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { deleteUserById, getListReferralBy, paginateUserApi } from '@/services/dashboard/user.api';
 import { convertDateTime } from '@/utils/functions/default-function';
 import { UserInterface } from '@/utils/interfaces/user.interface';
@@ -30,6 +31,8 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 
+import { paths } from '@/paths';
+
 import EditUser from './update-user.dialog';
 
 export interface UserFormData {
@@ -46,9 +49,10 @@ interface Props {
 }
 
 export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JSX.Element {
+  const router = useRouter();
   const [accounts, setAccounts] = React.useState<any>(null);
   const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [filter, setFilter] = React.useState({ username: '' });
   const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('username');
@@ -215,10 +219,20 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
                   <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
                     <DriveFileRenameOutlineIcon />
                   </Button>
-                  <Button variant="contained" color="success" sx={{ mr: 1 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    sx={{ mr: 1 }}
+                    onClick={() => router.push(paths.dashboard.user_bet_history + '/' + row._id)}
+                  >
                     LS Cược
                   </Button>
-                  <Button variant="contained" color="success" sx={{ mr: 1 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    sx={{ mr: 1 }}
+                    onClick={() => router.push(paths.dashboard.user_deposit_withdraw + '/' + row._id)}
+                  >
                     Chuyển & Rút tiền
                   </Button>
                   <Button variant="contained" color="error" onClick={() => handleOpenDeleteDialog(row)}>
@@ -238,7 +252,7 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[10, 25, 50, 100]}
       />
       <EditUser
         openEdit={openEdit}

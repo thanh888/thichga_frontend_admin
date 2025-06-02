@@ -20,6 +20,11 @@ export const paginateUserApi = async (query: string) => {
   return res;
 };
 
+export const getUserById = async (id: string) => {
+  const res = await axiosCustomize.get(`/user/${id}`);
+  return res;
+};
+
 export const getListReferralBy = async () => {
   const res = await axiosCustomize.get(`/user/referrals`);
   return res;
