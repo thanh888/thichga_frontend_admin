@@ -19,6 +19,8 @@ export const navItems = [
     icon: 'users',
     role: [RoleUsers.ADMIN],
   },
+  { key: 'Games', title: 'Games', href: paths.dashboard.games, icon: 'game', role: [RoleUsers.ADMIN] },
+
   { key: 'bet_room', title: 'Quản lý cược', href: paths.dashboard.bet_room, icon: 'rooms', role: [RoleUsers.ADMIN] },
   {
     key: 'other_room',
@@ -53,5 +55,5 @@ export const navItems = [
   { key: 'posts', title: 'Bài viết', href: paths.dashboard.posts, icon: 'post', role: [RoleUsers.ADMIN] },
   { key: 'supports', title: 'Link hỗ trợ', href: paths.dashboard.supports, icon: 'supports', role: [RoleUsers.ADMIN] },
   { key: 'banners', title: 'Banner', href: paths.dashboard.banners, icon: 'banners', role: [RoleUsers.ADMIN] },
-  { key: 'customers', title: 'Customers', href: paths.dashboard.customers, icon: 'users', role: [RoleUsers.ADMIN] },
+  // { key: 'customers', title: 'Customers', href: paths.dashboard.customers, icon: 'users', role: [RoleUsers.ADMIN] },
 ] satisfies NavItemConfig[];

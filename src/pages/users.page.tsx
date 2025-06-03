@@ -13,8 +13,6 @@ import { config } from '@/config';
 import CreateUser from '@/components/dashboard/users/create-user.dialog';
 import { UserFormData, UsersTable } from '@/components/dashboard/users/user-table';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
-
 export default function UsersPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState<boolean>(false);
   const [isReload, setIsReload] = React.useState<boolean>(true);

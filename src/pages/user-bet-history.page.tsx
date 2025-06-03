@@ -14,8 +14,6 @@ import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import { config } from '@/config';
 import UserBettingHistoriesTable from '@/components/dashboard/users/history-betting.table';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
-
 export default function UserBetHistoriesPage(): React.JSX.Element {
   const params = useParams();
   const user_id = params?.user_id?.toString();

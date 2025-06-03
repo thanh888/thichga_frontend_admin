@@ -17,7 +17,7 @@ import { config } from '@/config';
 import UserHitoryDepositsTable from '@/components/dashboard/users/history-depostit.table';
 import UserWithdrawTable from '@/components/dashboard/users/history-withdraw.table';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: `Nạp tiền | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function UserWithDrawDepositPage(): React.JSX.Element {
   const params = useParams();

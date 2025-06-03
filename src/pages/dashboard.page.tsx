@@ -1,37 +1,57 @@
 'use client';
 
 import * as React from 'react';
-import { findAllBetHistoryApi } from '@/services/dashboard/bet-history.api';
-import { findAllRevenueApi } from '@/services/dashboard/revenue.api';
-import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
-import { BettingRevenueInterface } from '@/utils/interfaces/revenue.interface';
+import { getCountStatsApi } from '@/services/dashboard/stats.api';
 import Grid from '@mui/material/Unstable_Grid2';
-import dayjs from 'dayjs';
 
-import { Budget } from '@/components/dashboard/overview/budget';
-import { LatestProducts } from '@/components/dashboard/overview/latest-products';
 import { TotalLineChart } from '@/components/dashboard/overview/line-revenue';
 import { RevenueTable } from '@/components/dashboard/overview/revenue-table';
-import { TasksProgress } from '@/components/dashboard/overview/tasks-progress';
+import { TotalDeposits } from '@/components/dashboard/overview/tasks-deposits';
 import { TotalColumnChart } from '@/components/dashboard/overview/total-column-chart';
-import { TotalCustomers } from '@/components/dashboard/overview/total-customers';
-import { TotalProfit } from '@/components/dashboard/overview/total-profit';
-import { Filter } from '@/components/dashboard/overview/traffic';
+import { TotalRooms } from '@/components/dashboard/overview/total-rooms';
+import { UserActive } from '@/components/dashboard/overview/total-users';
+import { TotalWithdraw } from '@/components/dashboard/overview/total-withdraw';
 
+interface CountStatsInterface {
+  countUser: number;
+  countRoom: number;
+  countDeposit: number;
+  countWithdraw: number;
+}
 export default function HomePage(): React.JSX.Element {
+  const [countStats, setCountStats] = React.useState<CountStatsInterface>({
+    countDeposit: 0,
+    countRoom: 0,
+    countUser: 0,
+    countWithdraw: 0,
+  });
+
+  const getCountStats = async () => {
+    try {
+      const response = await getCountStatsApi();
+      if (response.status === 200 || response.status === 201) {
+        setCountStats(response.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  React.useEffect(() => {
+    getCountStats();
+  }, []);
   return (
     <Grid container spacing={3}>
       <Grid lg={3} sm={6} xs={12}>
-        <Budget diff={12} trend="up" sx={{ height: '100%' }} value="324" />
+        <UserActive sx={{ height: '100%' }} value={countStats?.countUser?.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TotalCustomers diff={16} trend="down" sx={{ height: '100%' }} value="1.6k" />
+        <TotalRooms sx={{ height: '100%' }} value={countStats?.countUser?.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TasksProgress sx={{ height: '100%' }} value={75.5} />
+        <TotalDeposits sx={{ height: '100%' }} value={countStats?.countDeposit} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TotalProfit sx={{ height: '100%' }} value="$15k" />
+        <TotalWithdraw sx={{ height: '100%' }} value={countStats?.countWithdraw?.toString()} />
       </Grid>
       <Grid lg={6} xs={12}>
         <TotalColumnChart sx={{ height: '100%' }} />

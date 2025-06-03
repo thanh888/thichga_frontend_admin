@@ -1,3 +1,4 @@
+import { GameController } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react/dist/lib/types';
 import {
   AlignCenterVertical,
@@ -33,4 +34,5 @@ export const navIcons = {
   post: Note,
   supports: Headset,
   banners: Image,
+  game: GameController,
 } as Record<string, Icon>;

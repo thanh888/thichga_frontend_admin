@@ -13,7 +13,7 @@ import { config } from '@/config';
 import CreateOtherRoom from '@/components/dashboard/other-room/create-other-room.dialog';
 import { OtherRoomsTable } from '@/components/dashboard/other-room/other-room-table';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: `Gà đòn | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function OtherRoomPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState(false);

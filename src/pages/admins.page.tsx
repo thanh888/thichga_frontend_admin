@@ -14,8 +14,6 @@ import { AdminsStatusCode } from '@/components/dashboard/admins/admin-status-cod
 import { AdminsTable } from '@/components/dashboard/admins/admin-table';
 import CreateAdmin from '@/components/dashboard/admins/create-admin.dialog';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
-
 export default function AdminsPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState(false);
 

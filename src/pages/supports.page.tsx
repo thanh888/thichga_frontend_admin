@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { UpdateSettingApi } from '@/services/dashboard/setting.api';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
@@ -18,6 +19,9 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { toast } from 'react-toastify';
+
+import { SettingContext } from '@/contexts/setting-context';
 
 // Interface cho dữ liệu liên hệ
 interface ContactData {
@@ -28,16 +32,6 @@ interface ContactData {
   zalo: string;
   marquee: string;
 }
-
-// Dữ liệu mẫu ban đầu
-const initialContactData: ContactData = {
-  phone: '+84 123 456 789',
-  facebook: 'https://facebook.com/support',
-  telegram: 'https://t.me/support',
-  messenger: 'https://m.me/support',
-  zalo: 'https://zalo.me/support',
-  marquee: 'Liên hệ chúng tôi để được hỗ trợ 24/7!',
-};
 
 // Định nghĩa cấu trúc hiển thị
 interface ContactField {
@@ -51,7 +45,7 @@ const contactFields: ContactField[] = [
   { id: 'telegram', label: 'Telegram' },
   { id: 'messenger', label: 'Messenger' },
   { id: 'zalo', label: 'Zalo' },
-  { id: 'marquee', label: 'Thông báo chạy' },
+  { id: 'marquee', label: 'Marquee' },
 ];
 
 // Dialog tùy chỉnh
@@ -69,9 +63,13 @@ interface EditContactDialogProps {
   onClose: () => void;
   contactData: ContactData;
   onSave: (data: ContactData) => void;
+  settingId: string;
 }
 
-function EditContactDialog({ open, onClose, contactData, onSave }: Readonly<EditContactDialogProps>) {
+function EditContactDialog({ open, onClose, contactData, onSave, settingId }: Readonly<EditContactDialogProps>) {
+  const settingContext = React.useContext(SettingContext);
+  const checkSettingSession = settingContext?.checkSettingSession;
+
   const [formData, setFormData] = React.useState<ContactData>(contactData);
 
   React.useEffect(() => {
@@ -88,8 +86,23 @@ function EditContactDialog({ open, onClose, contactData, onSave }: Readonly<Edit
     }
   };
 
-  const handleSubmit = () => {
-    onSave(formData);
+  const handleSubmit = async () => {
+    const support_contact = {
+      phone: formData?.phone,
+      facebook: formData.facebook,
+      telegram: formData.telegram,
+      messenger: formData.messenger,
+      zalo: formData.zalo,
+    };
+    try {
+      const response = await UpdateSettingApi(settingId, { support_contact, slogan: formData.marquee });
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Chỉnh sửa thành công');
+        checkSettingSession?.();
+      }
+    } catch (error) {
+      console.log(error);
+    }
     onClose();
   };
 
@@ -163,8 +176,29 @@ function EditContactDialog({ open, onClose, contactData, onSave }: Readonly<Edit
 }
 
 export default function SupportContact() {
-  const [contactData, setContactData] = React.useState<ContactData>(initialContactData);
+  const settingContext = React.useContext(SettingContext);
+  const setting = settingContext?.setting;
+
+  const [contactData, setContactData] = React.useState<ContactData>({
+    phone: '',
+    facebook: '',
+    telegram: '',
+    messenger: '',
+    zalo: '',
+    marquee: '',
+  });
   const [openDialog, setOpenDialog] = React.useState(false);
+
+  React.useEffect(() => {
+    setContactData({
+      phone: setting?.support_contact?.phone ?? '',
+      facebook: setting?.support_contact?.facebook ?? '',
+      telegram: setting?.support_contact?.telegram ?? '',
+      messenger: setting?.support_contact?.messenger ?? '',
+      zalo: setting?.support_contact?.zalo ?? '',
+      marquee: setting?.slogan ?? '',
+    });
+  }, [setting]);
 
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -176,7 +210,6 @@ export default function SupportContact() {
 
   const handleSaveContact = (data: ContactData) => {
     setContactData(data);
-    // Thay bằng logic thực tế (ví dụ: gọi API để lưu dữ liệu)
     console.log('Contact data saved:', data);
   };
 
@@ -222,7 +255,7 @@ export default function SupportContact() {
                     },
                   }}
                 >
-                  <Typography variant="body1">{contactData[field.id]}</Typography>
+                  <Typography variant="body1">{contactData ? contactData[field.id] : ''}</Typography>
                 </Box>
               ) : (
                 <Typography variant="body1">{contactData[field.id]}</Typography>
@@ -236,12 +269,15 @@ export default function SupportContact() {
           </Button>
         </Box>
       </Paper>
-      <EditContactDialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        contactData={contactData}
-        onSave={handleSaveContact}
-      />
+      {setting?._id && (
+        <EditContactDialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          contactData={contactData}
+          onSave={handleSaveContact}
+          settingId={setting?._id}
+        />
+      )}
     </Box>
   );
 }

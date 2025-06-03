@@ -13,7 +13,7 @@ import { config } from '@/config';
 import CreateRoom from '@/components/dashboard/rooms/create-room.dialog';
 import { RoomsTable } from '@/components/dashboard/rooms/room-table';
 
-export const metadata = { title: `Customers | Dashboard | ${config.site.name}` } satisfies Metadata;
+export const metadata = { title: `Phòng cược | Dashboard | ${config.site.name}` } satisfies Metadata;
 
 export default function RoomsPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState(false);
