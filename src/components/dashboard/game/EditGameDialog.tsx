@@ -4,6 +4,7 @@ import React from 'react';
 import { uploadImageApi } from '@/services/dashboard/bet-room.api';
 import { updateGameById } from '@/services/dashboard/game.api';
 import { StatusGame } from '@/utils/enum/status-game.enum';
+import { TypeGameEnum } from '@/utils/enum/type-game.enum';
 import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
 import { GameInterface } from '@/utils/interfaces/game.interface';
 import {
@@ -38,6 +39,7 @@ export default function EditGameDialog({ open, onClose, game, setIsReload }: Edi
     image: game.image || '',
     description: game.description || '',
     status: game.status || StatusGame.UN_ACTIVE,
+    typeGame: game.typeGame ?? '',
   });
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [file, setFile] = React.useState<string>('');
@@ -51,6 +53,7 @@ export default function EditGameDialog({ open, onClose, game, setIsReload }: Edi
       image: game.image || '',
       description: game.description || '',
       status: game.status || StatusGame.UN_ACTIVE,
+      typeGame: game.typeGame ?? '',
     });
     if (game.image) {
       setImagePreview(`${process.env.NEXT_PUBLIC_BASE_API_URL}/${game.image}`);
