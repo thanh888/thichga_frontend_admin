@@ -39,6 +39,7 @@ export interface RevenueFormData {
   typeRevenue?: string;
   totalDeposits: number;
   totalWithdraw: number;
+  roomName?: tring;
 }
 
 // Define interface for table columns
@@ -281,10 +282,11 @@ export default function RevenueByDateTable(): React.JSX.Element {
                             ? '#f44336'
                             : '#9e9e9e'
                     }
-                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, color: 'white' }}
+                    sx={{ p: 1, borderRadius: 1, fontWeight: 500, color: 'white', whiteSpace: 'nowrap' }}
                   >
                     {row.typeRevenue
-                      ? listRevenueType.find((item: any) => item.value === row.typeRevenue)?.label || 'Không xác định'
+                      ? listRevenueType.find((item: any) => item.value === row.typeRevenue)?.label +
+                          `(${row?.roomName})` || 'Không xác định'
                       : 'Không xác định'}
                   </Typography>
                 </TableCell>

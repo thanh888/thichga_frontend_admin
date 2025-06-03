@@ -50,6 +50,8 @@ interface RoomeFormData {
   marquee: string;
   redName: string;
   blueName: string;
+  redOdds: string;
+  blueOdds: string;
   typeRoom: TypeBetRoomEnum.NORMAL | string;
 }
 
@@ -61,6 +63,8 @@ const defaultFormData: RoomeFormData = {
   marquee: '',
   redName: '',
   blueName: '',
+  redOdds: '',
+  blueOdds: '',
   typeRoom: TypeBetRoomEnum.OTHER,
 };
 
@@ -79,7 +83,12 @@ export default function CreateOtherRoom({ openCreate, setOpenCreate, setIsReload
         ...prev,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'redName', 'blueName', 'fee'].includes(name)) {
+      if (
+        !value &&
+        ['roomName', 'urlLive', 'urlType', 'redName', 'blueName', 'fee', 'marquee', 'redOdds', 'blueOdds'].includes(
+          name
+        )
+      ) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -94,15 +103,7 @@ export default function CreateOtherRoom({ openCreate, setOpenCreate, setIsReload
   };
 
   const handleSubmit = async () => {
-    const requiredFields = {
-      roomName: formData.roomName,
-      urlLive: formData.urlLive,
-      urlType: formData.urlType,
-      redName: formData.redName,
-      blueName: formData.blueName,
-      fee: formData.fee,
-    };
-    const isNotNull = CheckFormDataNull(requiredFields, setFormError);
+    const isNotNull = CheckFormDataNull(formData, setFormError);
 
     if (!isNotNull) {
       toast.error('Hãy điền đầy đủ thông tin bắt buộc');
@@ -208,6 +209,7 @@ export default function CreateOtherRoom({ openCreate, setOpenCreate, setIsReload
                   name="fee"
                   value={formData.fee}
                   onChange={handleChange}
+                  error={formError?.fee ?? false}
                   endAdornment={<InputAdornment position="end">%</InputAdornment>}
                 />
               </FormControl>
@@ -220,6 +222,7 @@ export default function CreateOtherRoom({ openCreate, setOpenCreate, setIsReload
                   name="marquee"
                   value={formData.marquee}
                   onChange={handleChange}
+                  error={formError?.marquee ?? false}
                 />
               </FormControl>
             </Grid>
@@ -250,6 +253,35 @@ export default function CreateOtherRoom({ openCreate, setOpenCreate, setIsReload
                   value={formData.blueName}
                   onChange={handleChange}
                   error={formError?.blueName ?? false}
+                />
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Tỷ lệ mẫu
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Tỷ lệ đội đỏ</InputLabel>
+                <OutlinedInput
+                  label="Tỷ lệ đội đỏ"
+                  name="redOdds"
+                  value={formData.redOdds}
+                  onChange={handleChange}
+                  error={formError?.redOdds ?? false}
+                />
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Tỷ lệ đội xanh</InputLabel>
+                <OutlinedInput
+                  label="Tỷ lệ đội xanh"
+                  name="blueOdds"
+                  value={formData.blueOdds}
+                  onChange={handleChange}
+                  error={formError?.blueOdds ?? false}
                 />
               </FormControl>
             </Grid>

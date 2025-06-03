@@ -66,6 +66,8 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       const formData = {
         adminID: user._id,
         status: newStatus,
+        money: openDialog.money,
+        userId: openDialog.userID._id,
         ...(feedback && { feedback }), // Include feedback if non-empty
       };
       const response = await updateWithdrawStatusApi(openDialog._id, formData);
@@ -104,28 +106,50 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
     >
       <DialogTitle id="status-dialog-title">Cập nhật trạng thái giao dịch</DialogTitle>
       <DialogContent>
-        <TextField label="Tên ngân hàng" value={openDialog?.bank?.bankName || ''} fullWidth margin="dense" disabled />
+        <TextField
+          label="Tên ngân hàng"
+          value={openDialog?.bank?.bankName || ''}
+          fullWidth
+          margin="dense"
+          sx={{
+            pointerEvents: 'none',
+          }}
+        />
         <TextField
           label="Số tài khoản"
           value={openDialog?.bank?.accountNumber || ''}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
         <TextField
           label="Tên chủ tài khoản"
           value={openDialog?.bank?.accountName || ''}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
-        <TextField label="Chi nhánh" value={openDialog?.bank?.branch || ''} fullWidth margin="dense" disabled />
+        <TextField
+          label="Chi nhánh"
+          value={openDialog?.bank?.branch || ''}
+          fullWidth
+          margin="dense"
+          sx={{
+            pointerEvents: 'none',
+          }}
+        />
         <TextField
           label="Số tiền"
           value={ConvertMoneyVND(Number(openDialog?.money) ?? 0) || '0'}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>

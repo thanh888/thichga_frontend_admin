@@ -100,29 +100,53 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
           Cập nhật trạng thái nạp tiền: {openDialog?.code}
         </DialogContentText>
 
-        {/* Display bank details as disabled text fields */}
-        <TextField label="Tên ngân hàng" value={openDialog?.bank?.bankName || ''} fullWidth margin="dense" disabled />
+        {/* Display bank details as  sx={{
+            pointerEvents: 'none',
+          }} text fields */}
+        <TextField
+          label="Tên ngân hàng"
+          value={openDialog?.bank?.bankName || ''}
+          fullWidth
+          margin="dense"
+          sx={{
+            pointerEvents: 'none',
+          }}
+        />
         <TextField
           label="Số tài khoản"
           value={openDialog?.bank?.accountNumber || ''}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
         <TextField
           label="Tên chủ tài khoản"
           value={openDialog?.bank?.accountName || ''}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
-        <TextField label="Chi nhánh" value={openDialog?.bank?.branch || ''} fullWidth margin="dense" disabled />
+        <TextField
+          label="Chi nhánh"
+          value={openDialog?.bank?.branch || ''}
+          fullWidth
+          margin="dense"
+          sx={{
+            pointerEvents: 'none',
+          }}
+        />
         <TextField
           label="Nội dung chuyển khoản"
           value={openDialog?.bank?.transferContent || ''}
           fullWidth
           margin="dense"
-          disabled
+          sx={{
+            pointerEvents: 'none',
+          }}
         />
 
         {/* Status selection */}

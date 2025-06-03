@@ -111,7 +111,12 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
         ...prev!,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'fee', 'marquee', 'redName', 'blueName'].includes(name)) {
+      if (
+        !value &&
+        ['roomName', 'urlLive', 'urlType', 'fee', 'marquee', 'redName', 'blueName', 'redOdds', 'blueOdds'].includes(
+          name
+        )
+      ) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -147,6 +152,8 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       formDataToSend.append('marquee', formData.marquee ?? '');
       formDataToSend.append('redName', formData.redName ?? '');
       formDataToSend.append('blueName', formData.blueName ?? '');
+      formDataToSend.append('redOdds', formData.redOdds?.toString() ?? '');
+      formDataToSend.append('blueOdds', formData.blueOdds?.toString() ?? '');
 
       const response = await UpdateBetRoomById(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
@@ -342,7 +349,7 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={12}>
+        <Grid item xs={12} md={6}>
           <FormControl fullWidth required>
             <InputLabel shrink>Tên phòng</InputLabel>
             <OutlinedInput
@@ -389,6 +396,32 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
               value={formData?.blueName}
               onChange={handleChange}
               error={formError?.blueName ?? false}
+            />
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel shrink sx={{ fontSize: 20 }}>
+              Tỉ lệ gà đỏ:
+            </InputLabel>
+            <OutlinedInput
+              name="redOdds"
+              value={formData?.redOdds}
+              onChange={handleChange}
+              error={formError?.redOdds ?? false}
+            />
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth>
+            <InputLabel shrink sx={{ fontSize: 20 }}>
+              Tỉ lệ gà xanh:
+            </InputLabel>
+            <OutlinedInput
+              name="blueOdds"
+              value={formData?.blueOdds}
+              onChange={handleChange}
+              error={formError?.blueOdds ?? false}
             />
           </FormControl>
         </Grid>

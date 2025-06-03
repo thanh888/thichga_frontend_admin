@@ -21,7 +21,13 @@ export const navItems = [
   },
   { key: 'Games', title: 'Games', href: paths.dashboard.games, icon: 'game', role: [RoleUsers.ADMIN] },
 
-  { key: 'bet_room', title: 'Quản lý cược', href: paths.dashboard.bet_room, icon: 'rooms', role: [RoleUsers.ADMIN] },
+  {
+    key: 'bet_room',
+    title: 'Quản lý cược',
+    href: paths.dashboard.bet_room,
+    icon: 'rooms',
+    role: [RoleUsers.ADMIN, RoleUsers.MANA_ROOM],
+  },
   {
     key: 'other_room',
     title: 'Quản lý cược gà đòn',
