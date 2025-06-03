@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { StatusGame } from '@/utils/enum/status-game.enum';
+import { TypeGameEnum } from '@/utils/enum/type-game.enum';
 import { GameInterface } from '@/utils/interfaces/game.interface';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -107,9 +108,11 @@ export const GameCard: React.FC<GameCardProps> = ({ game, setIsReload }) => {
           <IconButton onClick={() => setEditOpen(true)} size="small" color="primary">
             <EditIcon />
           </IconButton>
-          <IconButton onClick={() => setDeleteOpen(true)} size="small" color="error">
-            <DeleteIcon />
-          </IconButton>
+          {![TypeGameEnum.GA_CUA, TypeGameEnum.GA_DON].includes(game.typeGame as TypeGameEnum) && (
+            <IconButton onClick={() => setDeleteOpen(true)} size="small" color="error">
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       </Box>
 
