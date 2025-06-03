@@ -39,7 +39,7 @@ export interface RevenueFormData {
   typeRevenue?: string;
   totalDeposits: number;
   totalWithdraw: number;
-  roomName?: tring;
+  roomName?: string;
 }
 
 // Define interface for table columns
