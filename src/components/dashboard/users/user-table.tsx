@@ -254,12 +254,14 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[10, 25, 50, 100]}
       />
-      <EditUser
-        openEdit={openEdit}
-        setOpenEdit={setOpenEdit}
-        setIsReload={setIsReload}
-        listReferralBys={listReferralBys}
-      />
+      {openEdit && (
+        <EditUser
+          openEdit={openEdit}
+          setOpenEdit={setOpenEdit}
+          setIsReload={setIsReload}
+          listReferralBys={listReferralBys}
+        />
+      )}
       <Dialog
         open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}
