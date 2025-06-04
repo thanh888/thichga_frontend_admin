@@ -2,11 +2,10 @@ import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { ListBullets as ListBulletsIcon } from '@phosphor-icons/react/dist/ssr/ListBullets';
+import { CurrencyDollar as CurrencyDollarIcon } from '@phosphor-icons/react/dist/ssr/CurrencyDollar';
 
 export interface TasksProgressProps {
   sx?: SxProps;
@@ -26,7 +25,7 @@ export function TotalDeposits({ value, sx }: TasksProgressProps): React.JSX.Elem
               <Typography variant="h4">{value}</Typography>
             </Stack>
             <Avatar sx={{ backgroundColor: 'var(--mui-palette-warning-main)', height: '56px', width: '56px' }}>
-              <ListBulletsIcon fontSize="var(--icon-fontSize-lg)" />
+              <CurrencyDollarIcon fontSize="var(--icon-fontSize-lg)" />
             </Avatar>
           </Stack>
         </Stack>

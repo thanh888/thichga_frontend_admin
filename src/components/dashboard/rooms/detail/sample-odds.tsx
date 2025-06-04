@@ -18,17 +18,13 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 
+import { useSocket } from '@/hooks/socket';
+
 interface OddsFormData {
   redOdds: string;
   blueOdds: string;
 }
-export default function SampleOdds({
-  data,
-  setData,
-}: {
-  data: BettingRoomInterface;
-  setData: React.Dispatch<React.SetStateAction<BettingRoomInterface>>;
-}) {
+export default function SampleOdds({ data }: Readonly<{ data: BettingRoomInterface }>) {
   const params = useParams<{ id: string }>();
   const id = params?.id || ''; // Lấy id từ URL, đảm bảo không bị null
 
@@ -40,11 +36,20 @@ export default function SampleOdds({
     }
   };
 
+  const socket = useSocket();
+
   const handleUpdateOdds = async () => {
     try {
       const response = await UpdateOdds(id, formData);
       if (response.status === 201) {
         toast.success('Cập nhật tỷ lệ thành công');
+        if (socket) {
+          socket.emit('update-room', {
+            roomID: data._id,
+            isOpended: true,
+          });
+          socket.off('update-room');
+        }
       }
     } catch (error) {
       console.log(error);
@@ -57,62 +62,6 @@ export default function SampleOdds({
       blueOdds: data?.blueOdds?.toString() || '10',
     });
   }, [data]);
-
-  const [secondsLeft, setSecondsLeft] = useState<number>(0);
-
-  useEffect(() => {
-    if (!data?.isAcceptBetting) {
-      setSecondsLeft(0);
-      return;
-    }
-
-    const now = Date.now();
-    const endTime = new Date(data.endingAt || 0).getTime();
-    const initialSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
-
-    setSecondsLeft(initialSeconds);
-
-    const intervalId = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalId);
-          setData((prev) => (prev ? { ...prev, isAcceptBetting: false } : prev));
-
-          // handleToggleBetting();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [data?.endingAt, data?.isAcceptBetting]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  const handleToggleBetting = async () => {
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('isAcceptBetting', String(!data.isAcceptBetting));
-      formDataToSend.append('secondsEnding', String(data.secondsEnding));
-      formDataToSend.append('latestSessionID', String(data.latestSessionID));
-      const response = await EnableBetting(id, formDataToSend);
-      if (response.status === 200 || response.status === 201) {
-        setData((prev) => (prev ? { ...prev, isAcceptBetting: false } : prev));
-        // setIsReload(true);
-        toast.success(`Đã đóng cược`);
-      } else {
-        toast.error('Cập nhật trạng thái cược thất bại');
-      }
-    } catch (error) {
-      console.error('Error details:', error);
-      toast.error('Đã xảy ra lỗi, vui lòng thử lại');
-    }
-  };
 
   return (
     <>
@@ -170,31 +119,6 @@ export default function SampleOdds({
           </Box>
         </Box>
       )}
-
-      <Box
-        sx={{
-          width: '100%',
-          py: 2,
-          px: 4,
-          borderRadius: 2,
-          boxShadow: 3,
-          my: 4,
-          display: 'flex',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          Thời gian còn lại:
-        </Typography>
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{ border: '1px solid red', borderRadius: 1, padding: '2px', color: 'red', marginLeft: 1 }}
-        >
-          {secondsLeft > 0 ? formatTime(secondsLeft) : 'Hết thời gian cược'}
-        </Typography>
-      </Box>
     </>
   );
 }

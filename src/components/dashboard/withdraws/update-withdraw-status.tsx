@@ -26,10 +26,18 @@ interface Props {
   setOpenDialog: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const statusLabels: { [key in WithdrawStatusEnum]: string } = {
-  [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
-  [WithdrawStatusEnum.SUCCESS]: 'Thành công',
-  [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
+enum TypeWithdraw {
+  PENDING = 'PENDING',
+  MANUAL = 'MANUAL',
+  AUTO = 'AUTO',
+  REJECT = 'REJECT',
+}
+
+const statusLabels: { [key in TypeWithdraw]: string } = {
+  [TypeWithdraw.PENDING]: 'Chờ xử lý',
+  [TypeWithdraw.MANUAL]: 'Rút thủ công',
+  [TypeWithdraw.AUTO]: 'Rút tự động',
+  [TypeWithdraw.REJECT]: 'Từ chối',
 };
 
 const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialog, setOpenDialog }) => {
@@ -70,6 +78,11 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         userId: openDialog.userID._id,
         ...(feedback && { feedback }), // Include feedback if non-empty
       };
+
+      if ([TypeWithdraw.MANUAL, TypeWithdraw.AUTO].includes(newStatus as TypeWithdraw)) {
+        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.SUCCESS });
+      }
+
       const response = await updateWithdrawStatusApi(openDialog._id, formData);
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật trạng thái thành công');
@@ -154,7 +167,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>
           <Select label="Trạng thái" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-            {Object.values(WithdrawStatusEnum).map((status) => (
+            {Object.values(TypeWithdraw).map((status) => (
               <MenuItem key={status} value={status}>
                 {statusLabels[status]}
               </MenuItem>

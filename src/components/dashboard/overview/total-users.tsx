@@ -5,9 +5,7 @@ import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
 import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { ArrowDown as ArrowDownIcon } from '@phosphor-icons/react/dist/ssr/ArrowDown';
-import { ArrowUp as ArrowUpIcon } from '@phosphor-icons/react/dist/ssr/ArrowUp';
-import { CurrencyDollar as CurrencyDollarIcon } from '@phosphor-icons/react/dist/ssr/CurrencyDollar';
+import { Users as UsersIcon } from '@phosphor-icons/react/dist/ssr/Users';
 
 export interface UserActiveProps {
   sx?: SxProps;
@@ -27,7 +25,7 @@ export function UserActive({ sx, value }: UserActiveProps): React.JSX.Element {
               <Typography variant="h4">{value}</Typography>
             </Stack>
             <Avatar sx={{ backgroundColor: 'var(--mui-palette-primary-main)', height: '56px', width: '56px' }}>
-              <CurrencyDollarIcon fontSize="var(--icon-fontSize-lg)" />
+              <UsersIcon fontSize="var(--icon-fontSize-lg)" />
             </Avatar>
           </Stack>
         </Stack>

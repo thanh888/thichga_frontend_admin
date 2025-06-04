@@ -108,7 +108,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
         ...prev!,
         [name]: value,
       }));
-      if (!value && ['roomName', 'urlLive', 'urlType', 'fee', 'secondsEnding', 'redName', 'blueName'].includes(name)) {
+      if (!value && ['roomName', 'urlLive', 'urlType', 'fee', 'redName', 'blueName'].includes(name)) {
         setFieldError(setFormError, name, true);
       } else {
         setFieldError(setFormError, name, false);
@@ -156,7 +156,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       roomName: formData.roomName,
       urlLive: formData.urlLive,
       urlType: formData.urlType,
-      secondsEnding: formData.secondsEnding,
       redName: formData.redName,
       blueName: formData.blueName,
     };
@@ -172,7 +171,6 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       formDataToSend.append('roomName', formData.roomName ?? '');
       formDataToSend.append('urlLive', formData.urlLive ?? '');
       formDataToSend.append('urlType', formData.urlType ?? '');
-      formDataToSend.append('secondsEnding', formData?.secondsEnding?.toString() ?? '');
       formDataToSend.append('fee', formData?.fee?.toString() ?? '');
       formDataToSend.append('marquee', formData.marquee ?? '');
       formDataToSend.append('chattingJframe', formData.chattingJframe ?? '');
@@ -189,6 +187,13 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật phòng thành công');
         setIsReload(true);
+        if (socket) {
+          socket.emit('update-room', {
+            roomID: id,
+            isOpended: true,
+          });
+          socket.off('update-room');
+        }
       } else {
         toast.error('Cập nhật phòng thất bại');
       }
@@ -270,14 +275,10 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
 
   const handleEnableBetting = async () => {
     if (!formData) return;
-    if (Number(formData.secondsEnding) > 2000000) {
-      toast.warning('Thời gian kết thúc bé hơn 2,000,000s');
-      return;
-    }
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('isAcceptBetting', String(true));
-      formDataToSend.append('secondsEnding', String(formData.secondsEnding));
       formDataToSend.append('latestSessionID', String(formData.latestSessionID));
       const response = await EnableBetting(id, formDataToSend);
       if (response.status === 200 || response.status === 201) {
@@ -439,19 +440,8 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
                 )}
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel shrink>Số giây kết thúc phiên</InputLabel>
-                <OutlinedInput
-                  name="secondsEnding"
-                  type="number"
-                  value={formData?.secondsEnding}
-                  onChange={handleChange}
-                  error={formError?.secondsEnding ?? false}
-                />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
+
+            <Grid item xs={12} md={12}>
               <FormControl fullWidth>
                 <InputLabel shrink>% lãi</InputLabel>
                 <OutlinedInput

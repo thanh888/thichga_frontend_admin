@@ -45,7 +45,7 @@ export default function HomePage(): React.JSX.Element {
         <UserActive sx={{ height: '100%' }} value={countStats?.countUser?.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TotalRooms sx={{ height: '100%' }} value={countStats?.countUser?.toString()} />
+        <TotalRooms sx={{ height: '100%' }} value={countStats?.countRoom?.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
         <TotalDeposits sx={{ height: '100%' }} value={countStats?.countDeposit} />

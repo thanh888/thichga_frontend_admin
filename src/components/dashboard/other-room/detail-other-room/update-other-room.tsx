@@ -148,6 +148,13 @@ export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) 
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật phòng thành công');
         setIsReload(true);
+        if (socket) {
+          socket.emit('update-room', {
+            roomID: id,
+            isOpended: true,
+          });
+          socket.off('update-room');
+        }
       } else {
         toast.error('Cập nhật phòng thất bại');
       }
