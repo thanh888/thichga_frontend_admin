@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
 import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import BorderColorIcon from '@mui/icons-material/BorderColor';

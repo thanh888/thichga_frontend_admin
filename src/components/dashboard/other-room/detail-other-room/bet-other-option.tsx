@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { findAllBetHistoryBySessionApi, paginateBetHistoryApi } from '@/services/dashboard/bet-history.api';
-import { createBetOption, paginateOptionBySessionApi } from '@/services/dashboard/bet-option.api';
+import { findAllBetHistoryBySessionApi } from '@/services/dashboard/bet-history.api';
+import { createBetOption } from '@/services/dashboard/bet-option.api';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import { convertDateTime } from '@/utils/functions/default-function';
 import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
@@ -61,7 +60,7 @@ const columns: Column[] = [
   // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
-export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }): React.JSX.Element {
+export function BetOptionOtherComponent({ room }: Readonly<{ room: BettingRoomInterface }>): React.JSX.Element {
   const [isReload, setIsReload] = React.useState<boolean>(true);
   const socket = useSocket();
 
@@ -107,10 +106,6 @@ export function BetOptionOtherComponent({ room }: { room: BettingRoomInterface }
   }, [room.latestSessionID]);
 
   const { user } = useUser();
-
-  const handleOpenModal = () => {
-    setOpenModal(true);
-  };
 
   const handleCloseModal = () => {
     setOpenModal(false);

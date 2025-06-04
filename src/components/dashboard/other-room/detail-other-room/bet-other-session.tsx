@@ -2,22 +2,14 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateBetRoomApi } from '@/services/dashboard/bet-room.api'; // Assumed adapted for bet sessions
-
 import { paginateBetSessionApi } from '@/services/dashboard/bet-session.api';
 import { convertDateTime } from '@/utils/functions/default-function';
 import { BettingSessionInterface } from '@/utils/interfaces/bet-sesion.interface';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
   Box,
   Button,
   Card,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Stack,
   Table,
   TableBody,
@@ -26,7 +18,6 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
-  TextField,
   Typography,
 } from '@mui/material';
 
@@ -79,7 +70,7 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
   const [orderBy, setOrderBy] = React.useState<keyof Betsession>('createdAt');
 
   const params = useParams<{ id: string }>();
-  const id = params?.id || '';
+  const id = params?.id ?? '';
   const router = useRouter();
 
   const fetchSessions = async () => {
@@ -112,14 +103,6 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
     setOrderBy(property);
   };
 
-  const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
-  ) => {
-    const { name, value } = event.target;
-    setFilter((prev) => ({ ...prev, [name]: value }));
-    setPage(0); // Reset to first page when filtering
-  };
-
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -131,12 +114,6 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
 
   const handleViewDetail = (id: string) => {
     router.push(`${paths.dashboard.session_exgame}/${id}`); // Navigate to session detail page
-  };
-
-  const handleDelete = (code: string) => {
-    // Placeholder for delete functionality
-    console.log(`Delete session with code: ${code}`);
-    setIsReload(true); // Trigger reload after delete
   };
 
   return (
@@ -218,7 +195,7 @@ export function BetSesionOtherComponent({ isReload, setIsReload }: Readonly<Prop
       <Divider />
       <TablePagination
         component="div"
-        count={sessions?.totalDocs || 0}
+        count={sessions?.totalDocs ?? 0}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

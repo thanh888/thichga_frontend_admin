@@ -2,17 +2,7 @@
 
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  CloseOtherSession,
-  CloseSession,
-  DisableBetting,
-  EnableBetting,
-  getOneBetroomId,
-  OpenSession,
-  UpdateBetRoomById,
-  UpdateBettingApi,
-  uploadImageApi,
-} from '@/services/dashboard/bet-room.api';
+import { CloseOtherSession, OpenSession, UpdateBetRoomById, UpdateBettingApi } from '@/services/dashboard/bet-room.api';
 import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { UrlTypeEnum } from '@/utils/enum/url-type.enum';
 import { CheckFormDataNull, setFieldError } from '@/utils/functions/default-function';
@@ -80,7 +70,6 @@ interface Props {
 export default function UpdateOtherRoom({ data, setIsReload }: Readonly<Props>) {
   const params = useParams<{ id: string }>();
   const id = params?.id || '';
-  const router = useRouter();
 
   const [formData, setFormData] = React.useState<BettingRoomInterface>({});
   const [formError, setFormError] = React.useState<any>({});

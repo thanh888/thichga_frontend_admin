@@ -1,7 +1,5 @@
 'use client';
 
-import { log } from 'node:console';
-
 import * as React from 'react';
 import type { Metadata } from 'next';
 import { useParams } from 'next/navigation';

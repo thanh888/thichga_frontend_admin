@@ -1,11 +1,8 @@
 'use client';
 
-import path from 'path';
-
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { paginateOptionByExGameeSessionApi, paginateOptionBySessionApi } from '@/services/dashboard/bet-option.api'; // Adjusted API
-import { TeamEnum } from '@/utils/enum/team.enum';
+import { paginateOptionByExGameeSessionApi } from '@/services/dashboard/bet-option.api'; // Adjusted API
 import { convertDateTime } from '@/utils/functions/default-function';
 import {
   Box,
@@ -13,10 +10,6 @@ import {
   Card,
   CircularProgress,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   SelectChangeEvent,
   Table,
   TableBody,

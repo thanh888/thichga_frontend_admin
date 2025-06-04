@@ -3,16 +3,9 @@
 import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { findAllBetHistoryByOptionApi } from '@/services/dashboard/bet-history.api';
-import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
 import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
-import {
-  convertDateTime,
-  ConvertMoneyVND,
-  listResultHistory,
-  listStatusHistory,
-  numberThousandFload,
-} from '@/utils/functions/default-function';
+import { convertDateTime, listResultHistory, listStatusHistory } from '@/utils/functions/default-function';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
 import {
   Box,
@@ -132,10 +125,6 @@ export default function HistoryOptionExGamePage(): React.JSX.Element {
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const handleViewDetail = (code: string) => {
-    router.push(`/bets/${code}`);
   };
 
   if (isLoading) {

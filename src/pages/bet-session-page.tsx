@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { paginateBetHistoryApi } from '@/services/dashboard/bet-history.api';
 import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
-import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import {
   convertDateTime,
@@ -13,7 +12,6 @@ import {
   listStatusHistory,
 } from '@/utils/functions/default-function';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
-import { BettingRoomInterface } from '@/utils/interfaces/bet-room.interface';
 import {
   Box,
   Button,

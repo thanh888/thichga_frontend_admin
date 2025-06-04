@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import type { Metadata } from 'next';
 import { useParams } from 'next/navigation';
 import { getUserById } from '@/services/dashboard/user.api';
 import { UserInterface } from '@/utils/interfaces/user.interface';
@@ -11,7 +10,6 @@ import Typography from '@mui/material/Typography';
 import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Download';
 import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 
-import { config } from '@/config';
 import UserBettingHistoriesTable from '@/components/dashboard/users/history-betting.table';
 
 export default function UserBetHistoriesPage(): React.JSX.Element {

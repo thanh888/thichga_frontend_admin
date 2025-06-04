@@ -10,7 +10,6 @@ import {
   Card,
   CircularProgress,
   Divider,
-  SelectChangeEvent,
   Stack,
   Table,
   TableBody,

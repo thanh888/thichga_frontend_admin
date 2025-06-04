@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import type { Metadata } from 'next';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -9,9 +8,8 @@ import { Download as DownloadIcon } from '@phosphor-icons/react/dist/ssr/Downloa
 import { Plus as PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 
-import { config } from '@/config';
 import CreateUser from '@/components/dashboard/users/create-user.dialog';
-import { UserFormData, UsersTable } from '@/components/dashboard/users/user-table';
+import { UsersTable } from '@/components/dashboard/users/user-table';
 
 export default function UsersPage(): React.JSX.Element {
   const [openCreate, setOpenCreate] = React.useState<boolean>(false);
