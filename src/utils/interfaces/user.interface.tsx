@@ -19,7 +19,7 @@ export interface UserInterface {
   device_id?: string;
   role: RoleUsers | string;
   bank?: BankInteface;
-  money?: number;
+  money?: number | string;
 
   createdAt?: Date | string;
   updatedAt?: Date | string;

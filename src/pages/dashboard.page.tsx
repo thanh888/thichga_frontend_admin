@@ -11,12 +11,14 @@ import { TotalColumnChart } from '@/components/dashboard/overview/total-column-c
 import { TotalRooms } from '@/components/dashboard/overview/total-rooms';
 import { UserActive } from '@/components/dashboard/overview/total-users';
 import { TotalWithdraw } from '@/components/dashboard/overview/total-withdraw';
+import { UsersOnline } from '@/components/dashboard/overview/users-online';
 
 interface CountStatsInterface {
   countUser: number;
   countRoom: number;
   countDeposit: number;
   countWithdraw: number;
+  userOnline: number;
 }
 export default function HomePage(): React.JSX.Element {
   const [countStats, setCountStats] = React.useState<CountStatsInterface>({
@@ -24,6 +26,7 @@ export default function HomePage(): React.JSX.Element {
     countRoom: 0,
     countUser: 0,
     countWithdraw: 0,
+    userOnline: 0,
   });
 
   const getCountStats = async () => {
@@ -53,6 +56,10 @@ export default function HomePage(): React.JSX.Element {
       <Grid lg={3} sm={6} xs={12}>
         <TotalWithdraw sx={{ height: '100%' }} value={countStats?.countWithdraw?.toString()} />
       </Grid>
+      <Grid lg={3} sm={6} xs={12}>
+        <UsersOnline sx={{ height: '100%' }} value={countStats?.userOnline?.toString()} />
+      </Grid>
+      <Grid lg={12} sm={12} xs={12} p={0}></Grid>
       <Grid lg={6} xs={12}>
         <TotalColumnChart sx={{ height: '100%' }} />
       </Grid>

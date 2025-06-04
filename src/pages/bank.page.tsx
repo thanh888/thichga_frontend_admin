@@ -11,14 +11,24 @@ import {
   FormControl,
   Grid,
   InputLabel,
+  MenuItem,
   OutlinedInput,
   Paper,
+  Select,
   SelectChangeEvent,
   Typography,
 } from '@mui/material';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 
 import { SettingContext } from '@/contexts/setting-context';
+
+interface Bank {
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+}
 
 export default function BankPageBankPage() {
   const settingContext = React.useContext(SettingContext);
@@ -56,6 +66,26 @@ export default function BankPageBankPage() {
       }
     }
   };
+
+  const [banks, setBanks] = React.useState<Bank[]>([]);
+  const [isLoadingBanks, setIsLoadingBanks] = React.useState(false);
+
+  const getBanks = async () => {
+    setIsLoadingBanks(true);
+    try {
+      const response = await axios.get<{ data: Bank[] }>('https://api.vietqr.io/v2/banks');
+      setBanks(response.data.data);
+    } catch (error) {
+      console.log('Error fetching banks:', error);
+      alert('Không thể tải danh sách ngân hàng, vui lòng thử lại');
+    } finally {
+      setIsLoadingBanks(false);
+    }
+  };
+
+  React.useEffect(() => {
+    getBanks();
+  }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -162,13 +192,41 @@ export default function BankPageBankPage() {
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth required>
                     <InputLabel>Tên ngân hàng</InputLabel>
-                    <OutlinedInput
+
+                    <Select
+                      fullWidth
+                      value={formData?.bankName}
+                      onChange={handleChange}
+                      displayEmpty
+                      variant="outlined"
                       label="Tên ngân hàng"
                       name="bankName"
-                      value={formData.bankName ?? setting?.bank?.bankName}
-                      onChange={handleChange}
                       error={formError?.bankName ?? false}
-                    />
+                      disabled={isLoadingBanks}
+                      aria-label="Chọn ngân hàng"
+                      sx={{
+                        mb: { xs: 1, sm: 2 },
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          sx: { fontSize: { xs: '0.75rem', sm: '0.875rem' } },
+                        },
+                      }}
+                    >
+                      <MenuItem value="" disabled sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                        {isLoadingBanks ? 'Đang tải ngân hàng...' : '-- Chọn ngân hàng --'}
+                      </MenuItem>
+                      {banks.map((bank) => (
+                        <MenuItem
+                          key={bank.code}
+                          value={bank.code}
+                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        >
+                          {bank.shortName}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { UpdateUserById } from '@/services/dashboard/user.api';
 import { UserStatus } from '@/utils/enum/user-status.enum';
 import { CheckFormDataNull, listUserStatuss, setFieldError } from '@/utils/functions/default-function';
+import { BankInteface } from '@/utils/interfaces/bank.interface';
 import { UserInterface } from '@/utils/interfaces/user.interface';
 import CloseIcon from '@mui/icons-material/Close';
 import {
@@ -21,8 +22,10 @@ import {
   OutlinedInput,
   Select,
   SelectChangeEvent,
+  Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
@@ -47,7 +50,7 @@ const DisabledInput = styled(OutlinedInput)(({ theme }) => ({
 }));
 
 interface EditUserProps {
-  openEdit: any;
+  openEdit: UserInterface;
   setOpenEdit: React.Dispatch<React.SetStateAction<any>>;
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
   listReferralBys: any[];
@@ -66,22 +69,61 @@ const defaultFormData: UserInterface = {
   role: '',
 };
 
+const defaultBankData: BankInteface = {
+  bankName: '',
+  accountNumber: '',
+  accountName: '',
+  branch: '',
+};
+
+interface Bank {
+  code: string;
+  name: string;
+  shortName?: string;
+  bin?: string;
+}
+
 export default function EditUser({ openEdit, setOpenEdit, setIsReload, listReferralBys }: Readonly<EditUserProps>) {
   const [formData, setFormData] = React.useState<UserInterface>(defaultFormData);
+  const [bankData, setBankData] = React.useState<BankInteface>(defaultBankData);
   const [formError, setFormError] = React.useState<any>();
 
+  const [banks, setBanks] = React.useState<Bank[]>([]);
+  const [isLoadingBanks, setIsLoadingBanks] = React.useState(false);
+
+  const getBanks = async () => {
+    setIsLoadingBanks(true);
+    try {
+      const response = await axios.get<{ data: Bank[] }>('https://api.vietqr.io/v2/banks');
+      setBanks(response.data.data);
+    } catch (error) {
+      console.log('Error fetching banks:', error);
+      alert('Không thể tải danh sách ngân hàng, vui lòng thử lại');
+    } finally {
+      setIsLoadingBanks(false);
+    }
+  };
+
   React.useEffect(() => {
+    getBanks();
     if (openEdit !== null) {
       setFormData({
         username: openEdit?.username ?? '',
         email: openEdit?.email ?? '',
         phone: openEdit?.phone ?? '',
-        fullname: openEdit?.fullName ?? '',
+        fullname: openEdit?.fullname ?? '',
         pin: openEdit?.pin ?? '',
         money: openEdit?.money ?? '',
         status: openEdit?.status ?? UserStatus.ACTIVE,
         referral_receiver_id: openEdit?.referral_receiver_id?._id ?? '',
         role: openEdit?.role ?? '', // Add this line to include the required 'role' property
+      });
+
+      setBankData({
+        accountName: openEdit?.bank?.accountName ?? '',
+        accountNumber: openEdit?.bank?.accountNumber ?? '',
+        bankName: openEdit?.bank?.bankName ?? '',
+        branch: openEdit?.bank?.branch ?? '',
       });
     }
   }, [openEdit]);
@@ -99,6 +141,19 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
         setFieldError(setFormError, name, true);
         return;
       }
+      setFieldError(setFormError, name, false);
+    }
+  };
+
+  const handleBankChange = (
+    event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string | any>
+  ) => {
+    const { name, value } = event.target;
+    if (name) {
+      setBankData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
       setFieldError(setFormError, name, false);
     }
   };
@@ -121,8 +176,13 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
       return;
     }
 
+    if (!openEdit._id) {
+      return;
+    }
+
     try {
-      const response = await UpdateUserById(openEdit._id, formData);
+      const newFormData = { ...{ bank: bankData }, ...formData };
+      const response = await UpdateUserById(openEdit._id, newFormData);
       if (response.status === 200 || response.status === 201) {
         setIsReload(true);
         toast.success('Cập nhật tài khoản thành công');
@@ -144,7 +204,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
     <BootstrapDialog
       onClose={handleClose}
       aria-labelledby="customized-dialog-title"
-      open={openEdit}
+      open={!!openEdit}
       maxWidth="md"
       fullWidth
     >
@@ -187,18 +247,6 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                />
-              </FormControl>
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <FormControl fullWidth required>
-                <InputLabel>EMAIL</InputLabel>
-                <OutlinedInput
-                  label="EMAIL"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={formError?.email ?? false}
                 />
               </FormControl>
             </Grid>
@@ -304,6 +352,69 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
               <FormControl fullWidth>
                 <InputLabel>NGÀY TẠO</InputLabel>
                 <DisabledInput label="NGÀY TẠO" name="createdAt" value={openEdit?.createdAt} disabled />
+              </FormControl>
+            </Grid>
+            <Grid item md={12} xs={12}>
+              <Typography>Thông tin ngân hàng</Typography>
+            </Grid>
+
+            <Grid item md={6} xs={12}>
+              <FormControl fullWidth>
+                <Select
+                  fullWidth
+                  value={bankData?.bankName}
+                  onChange={handleBankChange}
+                  displayEmpty
+                  variant="outlined"
+                  name="bankName"
+                  disabled={isLoadingBanks}
+                  sx={{
+                    mb: { xs: 1, sm: 2 },
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { fontSize: { xs: '0.75rem', sm: '0.875rem' } },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                    {isLoadingBanks ? 'Đang tải ngân hàng...' : '-- Tên ngân hàng --'}
+                  </MenuItem>
+                  {banks.map((bank) => (
+                    <MenuItem key={bank.code} value={bank.code} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                      {bank.shortName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Chi nhánh</InputLabel>
+                <OutlinedInput label="Chi nhánh" name="branch" value={bankData.branch} onChange={handleBankChange} />
+              </FormControl>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Tên tài khoản</InputLabel>
+                <OutlinedInput
+                  label="branch"
+                  name="accountName"
+                  value={bankData.accountName}
+                  onChange={handleBankChange}
+                />
+              </FormControl>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Số tài khoản</InputLabel>
+                <OutlinedInput
+                  label="Số tài khoản"
+                  name="accountNumber"
+                  value={bankData.accountNumber}
+                  onChange={handleBankChange}
+                />
               </FormControl>
             </Grid>
           </Grid>

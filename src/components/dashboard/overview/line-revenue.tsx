@@ -14,7 +14,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import type { SxProps } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import { ArrowClockwise as ArrowClockwiseIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
@@ -27,12 +27,24 @@ export interface Props {
   sx?: SxProps;
 }
 
+function getDefaultDates() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const format = (date: Date) => date.toISOString().split('T')[0];
+  return {
+    startDate: format(start),
+    endDate: format(end),
+  };
+}
+
 export function TotalLineChart({ sx }: Props): React.JSX.Element {
   const theme = useTheme();
+  const { startDate: defaultStartDate, endDate: defaultEndDate } = getDefaultDates();
   const [revenues, setRevenues] = React.useState<any[]>([]);
   const [period, setPeriod] = React.useState<string>('month');
-  const [startDate, setStartDate] = React.useState<string>('2025-05-01');
-  const [endDate, setEndDate] = React.useState<string>('2025-05-31');
+  const [startDate, setStartDate] = React.useState<string>(defaultStartDate);
+  const [endDate, setEndDate] = React.useState<string>(defaultEndDate);
   const [loading, setLoading] = React.useState<boolean>(false);
 
   const getRevenues = async () => {
@@ -40,7 +52,6 @@ export function TotalLineChart({ sx }: Props): React.JSX.Element {
     try {
       const query = `period=${period}&startDate=${startDate.replace(/-/g, '/')}&endDate=${endDate.replace(/-/g, '/')}`;
       const response = await findTotalLineRevenueApi(query);
-      console.log('API Response:', response.data); // Debug
       if (response.status === 200 || response.status === 201) {
         setRevenues(response.data);
       } else {
@@ -77,11 +88,11 @@ export function TotalLineChart({ sx }: Props): React.JSX.Element {
         title={`Biểu đồ doanh thu (${period === 'month' ? 'Tháng' : period === 'week' ? 'Tuần' : 'Năm'})`}
       />
       <CardContent>
-        <div style={{ marginBottom: '16px' }}>
+        <div style={{ marginBottom: 16 }}>
           <FormControl sx={{ minWidth: 120, marginRight: 2 }}>
             <InputLabel>Lọc kiểu</InputLabel>
             <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Period">
-              <MenuItem value="week">Tuần`</MenuItem>
+              <MenuItem value="week">Tuần</MenuItem>
               <MenuItem value="month">Tháng</MenuItem>
               <MenuItem value="year">Năm</MenuItem>
             </Select>
@@ -124,18 +135,12 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
   const theme = useTheme();
 
   const categories = revenues.map((item) => {
-    const [year, periodValue, day] = item._id.split('/');
+    const [year, month, day] = item._id.split('/');
     if (period === 'year') {
-      return `Tháng ${parseInt(periodValue)}/${year}`;
+      return `Tháng ${parseInt(month)}/${year}`;
     }
-    return day ? `Ngày ${parseInt(day)}/${parseInt(periodValue)}/${year}` : `Tháng ${parseInt(periodValue)}/${year}`;
+    return day ? `Ngày ${parseInt(day)}/${parseInt(month)}/${year}` : `Tháng ${parseInt(month)}/${year}`;
   });
-  const totalProfit = revenues.map((item) => item.totalProfit || 0);
-  const totalRevenue = revenues.map((item) => item.totalRevenue || 0);
-  const totalBetMoney = revenues.map((item) => item.totalBetMoney || 0);
-  const totalExpense = revenues.map((item) => item.totalExpense || 0);
-  const totalDeposits = revenues.map((item) => item.totalDeposits || 0);
-  const totalWithdraw = revenues.map((item) => item.totalWithdraw || 0);
 
   const chartOptions: ApexOptions = {
     chart: {
@@ -143,17 +148,10 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       toolbar: { show: false },
       zoom: { enabled: true },
     },
-    colors: [
-      '#1976D2', // Total Profit - Deep Blue
-      '#64B5F6', // Total Revenue - Light Blue
-      '#4CAF50', // Total Bet Money - Green
-      '#D32F2F', // Total Expense - Red
-      '#26A69A', // Total Deposits - Teal
-      '#AB47BC', // Total Withdraw - Purple
-    ],
+    colors: ['#1976D2', '#64B5F6', '#4CAF50', '#D32F2F', '#26A69A', '#AB47BC'],
     dataLabels: { enabled: false },
     stroke: {
-      curve: 'smooth', // Smooth curve for lines
+      curve: 'smooth',
       width: 3,
     },
     fill: { opacity: 1 },
@@ -169,40 +167,37 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       labels: { colors: theme.palette.text.secondary },
     },
     markers: {
-      size: 5, // Show points on lines
+      size: 5,
       hover: { size: 8 },
     },
     xaxis: {
+      categories,
       axisBorder: { color: theme.palette.divider, show: true },
       axisTicks: { color: theme.palette.divider, show: true },
-      categories,
       labels: {
         style: { colors: theme.palette.text.secondary },
-        rotate: -45, // Rotate labels if too long
+        rotate: -45,
       },
     },
     yaxis: {
       labels: {
-        formatter: (value) => (value >= 0 ? `${value}K` : `${value}k`),
+        formatter: (value) => `${value}K`,
         style: { colors: theme.palette.text.secondary },
       },
     },
     tooltip: {
       enabled: true,
-      y: {
-        formatter: (value) => (value >= 0 ? `${value}K` : `${value}k`),
-      },
+      y: { formatter: (value) => `${value}K` },
     },
     series: [
-      { name: 'Tổng Hoa Hồng', data: totalProfit },
-      { name: 'Tổng Doanh Thu', data: totalRevenue },
-      { name: 'Tổng Tiền Cược', data: totalBetMoney },
-      { name: 'Tổng Chi Phí', data: totalExpense },
-      { name: 'Tổng Nạp', data: totalDeposits },
-      { name: 'Tổng Rút', data: totalWithdraw },
+      { name: 'Tổng Hoa Hồng', data: revenues.map((r) => r.totalProfit || 0) },
+      { name: 'Tổng Doanh Thu', data: revenues.map((r) => r.totalRevenue || 0) },
+      { name: 'Tổng Tiền Cược', data: revenues.map((r) => r.totalBetMoney || 0) },
+      { name: 'Tổng Chi Phí', data: revenues.map((r) => r.totalExpense || 0) },
+      { name: 'Tổng Nạp', data: revenues.map((r) => r.totalDeposits || 0) },
+      { name: 'Tổng Rút', data: revenues.map((r) => r.totalWithdraw || 0) },
     ],
   };
 
-  console.log('Chart Options:', chartOptions); // Debug
   return chartOptions;
 }

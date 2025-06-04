@@ -3,20 +3,22 @@
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { findTotalColumnRevenueApi } from '@/services/dashboard/revenue.api';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import { alpha, useTheme } from '@mui/material/styles';
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { SxProps } from '@mui/material/styles';
-import TextField from '@mui/material/TextField';
 import { ArrowClockwise as ArrowClockwiseIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
 import { ArrowRight as ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight';
 import type { ApexOptions } from 'apexcharts';
@@ -29,10 +31,27 @@ export interface Props {
 
 export function TotalColumnChart({ sx }: Props): React.JSX.Element {
   const theme = useTheme();
-  const [revenues, setRevenues] = React.useState<any[]>([]);
+
+  const getDefaultSelectedDate = (period: string): string => {
+    const now = new Date();
+    if (period === 'day') {
+      return now.toISOString().split('T')[0]; // yyyy-mm-dd
+    } else if (period === 'month') {
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // yyyy-mm
+    } else if (period === 'year') {
+      return `${now.getFullYear()}`; // yyyy
+    }
+    return '';
+  };
+
   const [period, setPeriod] = React.useState<string>('month');
-  const [selectedDate, setSelectedDate] = React.useState<string>('2025-05-01');
+  const [selectedDate, setSelectedDate] = React.useState<string>(() => getDefaultSelectedDate('month'));
+  const [revenues, setRevenues] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    setSelectedDate(getDefaultSelectedDate(period));
+  }, [period]);
 
   const getRevenues = async () => {
     setLoading(true);
@@ -44,11 +63,10 @@ export function TotalColumnChart({ sx }: Props): React.JSX.Element {
         const [year, month] = selectedDate.split('-');
         query += `&startDate=${year}/${month}/01&endDate=${year}/${month}/31`;
       } else if (period === 'year') {
-        const year = selectedDate.split('-')[0];
+        const year = selectedDate;
         query += `&startDate=${year}/01/01&endDate=${year}/12/31`;
       }
       const response = await findTotalColumnRevenueApi(query);
-      console.log('API Response:', response.data); // Debug
       if (response.status === 200 || response.status === 201) {
         setRevenues(response.data);
       } else {
@@ -88,7 +106,7 @@ export function TotalColumnChart({ sx }: Props): React.JSX.Element {
         <div style={{ marginBottom: '16px' }}>
           <FormControl sx={{ minWidth: 120, marginRight: 2 }}>
             <InputLabel>Lọc kiểu</InputLabel>
-            <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Period">
+            <Select value={period} onChange={(e) => setPeriod(e.target.value)} label="Lọc kiểu">
               <MenuItem value="day">Ngày</MenuItem>
               <MenuItem value="month">Tháng</MenuItem>
               <MenuItem value="year">Năm</MenuItem>
@@ -96,7 +114,7 @@ export function TotalColumnChart({ sx }: Props): React.JSX.Element {
           </FormControl>
           <TextField
             label={period === 'day' ? 'Chọn ngày' : period === 'month' ? 'Chọn tháng' : 'Chọn năm'}
-            type="date"
+            type={period === 'year' ? 'number' : 'date'}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
@@ -142,20 +160,9 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
   const totalDeposits = revenues.map((item) => item.totalDeposits || 0);
   const totalWithdraw = revenues.map((item) => item.totalWithdraw || 0);
 
-  const chartOptions: ApexOptions = {
-    chart: {
-      background: 'transparent',
-      stacked: false,
-      toolbar: { show: false },
-    },
-    colors: [
-      '#1976D2', // Total Profit - Deep Blue
-      '#64B5F6', // Total Revenue - Light Blue
-      '#4CAF50', // Total Bet Money - Green
-      '#D32F2F', // Total Expense - Red
-      '#26A69A', // Total Deposits - Teal
-      '#AB47BC', // Total Withdraw - Purple
-    ],
+  return {
+    chart: { background: 'transparent', stacked: false, toolbar: { show: false } },
+    colors: ['#1976D2', '#64B5F6', '#4CAF50', '#D32F2F', '#26A69A', '#AB47BC'],
     dataLabels: { enabled: false },
     fill: { opacity: 1, type: 'solid' },
     grid: {
@@ -169,22 +176,18 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       position: 'top',
       labels: { colors: theme.palette.text.secondary },
     },
-    plotOptions: {
-      bar: { columnWidth: '50%' },
-    },
+    plotOptions: { bar: { columnWidth: '50%' } },
     stroke: { colors: ['transparent'], show: true, width: 2 },
     theme: { mode: theme.palette.mode },
     xaxis: {
       axisBorder: { color: theme.palette.divider, show: true },
       axisTicks: { color: theme.palette.divider, show: true },
       categories,
-      labels: {
-        style: { colors: theme.palette.text.secondary },
-      },
+      labels: { style: { colors: theme.palette.text.secondary } },
     },
     yaxis: {
       labels: {
-        formatter: (value) => (value >= 0 ? `${value}K` : `${value}k`),
+        formatter: (value) => `${value}K`,
         style: { colors: theme.palette.text.secondary },
       },
     },
@@ -203,7 +206,4 @@ function useChartOptions(revenues: any[], period: string): ApexOptions {
       { name: 'Tổng Rút', data: totalWithdraw },
     ],
   };
-
-  console.log('Chart Options:', chartOptions); // Debug
-  return chartOptions;
 }
