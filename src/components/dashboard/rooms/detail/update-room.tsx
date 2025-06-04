@@ -270,6 +270,10 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
 
   const handleEnableBetting = async () => {
     if (!formData) return;
+    if (Number(formData.secondsEnding) > 2000000) {
+      toast.warning('Thời gian kết thúc bé hơn 2,000,000s');
+      return;
+    }
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('isAcceptBetting', String(true));

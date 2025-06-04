@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { deleteRevenueById, paginateRevenueByDateCloseApi } from '@/services/dashboard/revenue.api';
 import { listRevenueType, numberThousandFload } from '@/utils/functions/default-function';
 import {
@@ -10,10 +10,6 @@ import {
   Card,
   CircularProgress,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   SelectChangeEvent,
   Stack,
   Table,
@@ -23,7 +19,6 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
-  TextField,
   Typography,
 } from '@mui/material';
 import { toast } from 'react-toastify';
@@ -157,14 +152,6 @@ export default function RevenueByDateTable(): React.JSX.Element {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
-  };
-
-  const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>
-  ) => {
-    const { name, value } = event.target;
-    setFilter((prev) => ({ ...prev, [name]: value }));
-    setPage(0);
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {
