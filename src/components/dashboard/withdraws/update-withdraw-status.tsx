@@ -83,8 +83,11 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         accountName: openDialog?.bank?.accountName,
       };
 
-      if ([TypeWithdraw.MANUAL, TypeWithdraw.AUTO].includes(newStatus as TypeWithdraw)) {
+      if (newStatus === TypeWithdraw.MANUAL) {
         Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.SUCCESS });
+      }
+      if (newStatus === TypeWithdraw.AUTO) {
+        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.PENDING });
       }
 
       const response = await updateWithdrawStatusApi(openDialog._id, formData);
@@ -92,7 +95,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         toast.success('Cập nhật trạng thái thành công');
         setIsReload(true); // Trigger refresh
 
-        if (socket) {
+        if (socket && newStatus === TypeWithdraw.MANUAL) {
           socket.emit('withdraw-money', {
             userID: openDialog.userID._id,
             status: formData.status,

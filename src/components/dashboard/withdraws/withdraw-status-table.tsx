@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
@@ -39,6 +40,8 @@ interface WithdrawHistoryFormData {
   adminID: any;
   status: string;
   code: string;
+  referenceCode: string;
+  mode: DepositModeEnum;
   createdAt: string;
 }
 
@@ -53,8 +56,10 @@ interface Column {
 
 const columns: Column[] = [
   { id: 'code', label: 'Mã giao dịch', minWidth: 120, align: 'left' },
+  { id: 'referenceCode', label: 'Mã tham chiếu', minWidth: 120, align: 'left' },
   { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   { id: 'bank', label: 'Ngân hàng', minWidth: 120, align: 'left' },
+  { id: 'mode', label: 'Phương thức', minWidth: 120, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -261,7 +266,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                           <Button
                             variant="outlined"
                             size="small"
-                            disabled={row.status !== WithdrawStatusEnum.PENDING}
+                            disabled={row.status !== WithdrawStatusEnum.PENDING || row.mode === DepositModeEnum.AUTO}
                             onClick={() => handleOpenDialog(row)}
                           >
                             <BorderColorIcon />
@@ -270,12 +275,27 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                       );
                     }
                     let value: any = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'referenceCode') {
+                      value = row?.referenceCode || '';
+                    }
                     if (column.id === 'userID') {
                       value = row.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
                       value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'bank') {
                       value = row.bank?.bankName || 'N/A';
+                    } else if (column.id === 'mode') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                          >
+                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : ``}
+                          </Typography>
+                        </TableCell>
+                      );
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>
@@ -290,7 +310,10 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                             }
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {statusLabels[row.status as WithdrawStatusEnum] || row.status}
+                            {(row.mode === DepositModeEnum.AUTO &&
+                              row.status === WithdrawStatusEnum.PENDING &&
+                              'Đang xử lý') ??
+                              statusLabels[row.status as WithdrawStatusEnum]}
                           </Typography>
                         </TableCell>
                       );
