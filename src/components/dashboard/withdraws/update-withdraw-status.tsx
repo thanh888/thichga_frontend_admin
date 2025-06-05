@@ -75,8 +75,12 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         adminID: user._id,
         status: newStatus,
         money: openDialog.money,
-        userId: openDialog.userID._id,
+        userID: openDialog.userID._id,
         ...(feedback && { feedback }), // Include feedback if non-empty
+        feedback,
+        bankCode: openDialog?.bank?.code,
+        accountNumber: openDialog?.bank?.accountNumber,
+        accountName: openDialog?.bank?.accountName,
       };
 
       if ([TypeWithdraw.MANUAL, TypeWithdraw.AUTO].includes(newStatus as TypeWithdraw)) {

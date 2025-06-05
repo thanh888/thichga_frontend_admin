@@ -58,7 +58,7 @@ const columns: Column[] = [
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
-  { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
+  // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
 interface Props {
@@ -197,20 +197,20 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
               {data?.docs?.map((row) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
-                    if (column.id === 'action') {
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            disabled={row.status !== WithdrawStatusEnum.PENDING}
-                            onClick={() => handleOpenDialog(row)}
-                          >
-                            <BorderColorIcon />
-                          </Button>
-                        </TableCell>
-                      );
-                    }
+                    // if (column.id === 'action') {
+                    //   return (
+                    //     <TableCell key={column.id} align={column.align}>
+                    //       <Button
+                    //         variant="outlined"
+                    //         size="small"
+                    //         disabled={row.status !== WithdrawStatusEnum.PENDING}
+                    //         onClick={() => handleOpenDialog(row)}
+                    //       >
+                    //         <BorderColorIcon />
+                    //       </Button>
+                    //     </TableCell>
+                    //   );
+                    // }
                     let value = row[column.id as keyof WithdrawHistoryFormData];
                     if (column.id === 'userID') {
                       value = row?.userID?.username || 'N/A';

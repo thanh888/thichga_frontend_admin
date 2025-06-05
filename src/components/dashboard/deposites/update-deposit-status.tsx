@@ -25,18 +25,10 @@ interface Props {
   setOpenDialog: React.Dispatch<React.SetStateAction<any>>;
 }
 
-enum TypeDeposit {
-  PENDING = 'PENDING',
-  MANUAL = 'MANUAL',
-  AUTO = 'AUTO',
-  REJECT = 'REJECT',
-}
-
-const statusLabels: { [key in TypeDeposit]: string } = {
-  [TypeDeposit.PENDING]: 'Chờ xử lý',
-  [TypeDeposit.MANUAL]: 'Nạp thủ công',
-  [TypeDeposit.AUTO]: 'Nạp tự động',
-  [TypeDeposit.REJECT]: 'Từ chối',
+const statusLabels: { [key in DepositStatusEnum]: string } = {
+  [DepositStatusEnum.PENDING]: 'Chờ xử lý',
+  [DepositStatusEnum.SUCCESS]: 'Thành công',
+  [DepositStatusEnum.REJECT]: 'Từ chối',
 };
 
 const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog, setOpenDialog }) => {
@@ -73,9 +65,6 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
         adminID: user._id,
         status: newStatus,
       };
-      if ([TypeDeposit.MANUAL, TypeDeposit.AUTO].includes(newStatus as TypeDeposit)) {
-        Object.assign(formData, { mode: newStatus, status: DepositStatusEnum.SUCCESS });
-      }
       const response = await updateDepositStatusApi(openDialog._id, formData);
       if (response.status === 200 || response.status === 201) {
         toast.success('Cập nhật trạng thái thành công');
@@ -164,7 +153,7 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>
           <Select label="Trạng thái" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-            {Object.values(TypeDeposit).map((status) => (
+            {Object.values(DepositStatusEnum).map((status) => (
               <MenuItem key={status} value={status}>
                 {statusLabels[status]}
               </MenuItem>

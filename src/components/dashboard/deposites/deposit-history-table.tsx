@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { paginate } from '@/services/dashboard/deposit-history.api';
+import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
@@ -32,7 +33,10 @@ interface DepositHistoryFormData {
   adminID: any;
   status: string;
   code: string;
+  referenceCode: string;
   createdAt: string;
+  mode: DepositModeEnum;
+  method: DepositMethod;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -45,8 +49,9 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
-  { id: 'userID', label: 'Người dùng', minWidth: 120, align: 'left' },
+  { id: 'code', label: 'Mã code', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người tạo', minWidth: 150, align: 'left' },
+  { id: 'referenceCode', label: 'Mã tự động', minWidth: 100, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -54,12 +59,12 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'mode', label: 'Phương thức', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
-  { id: 'adminID', label: 'Quản trị viên', minWidth: 120, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
-
 interface Props {
   isReload: boolean;
   setIsReload: React.Dispatch<React.SetStateAction<boolean>>;
@@ -67,7 +72,7 @@ interface Props {
 
 const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -169,7 +174,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           onChange={handleSearch}
           sx={{ mb: 2, mx: 2 }}
         />
-        <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
+        <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-history-table">
             <TableHead>
               <TableRow>
@@ -199,8 +204,8 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         <TableCell key={column.id} align={column.align}>
                           <Button
                             variant="outlined"
-                            size="small"
                             disabled={row.status !== DepositStatusEnum.PENDING}
+                            size="small"
                             onClick={() => handleOpenDialog(row)}
                           >
                             <BorderColorIcon />
@@ -211,8 +216,22 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                     let value = row[column.id as keyof DepositHistoryFormData];
                     if (column.id === 'userID') {
                       value = row?.userID?.username || 'N/A';
+                    } else if (column.id === 'referenceCode') {
+                      value = row?.referenceCode || '';
                     } else if (column.id === 'adminID') {
                       value = row?.adminID?.username || 'N/A';
+                    } else if (column.id === 'mode') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                          >
+                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : `Thủ công(${row.method})`}
+                          </Typography>
+                        </TableCell>
+                      );
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>
@@ -253,7 +272,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
           count={data.totalDocs}
           rowsPerPage={rowsPerPage}

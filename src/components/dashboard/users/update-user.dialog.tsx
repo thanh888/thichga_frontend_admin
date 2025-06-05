@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { UpdateUserById } from '@/services/dashboard/user.api';
 import { UserStatus } from '@/utils/enum/user-status.enum';
+import { getBanks, TypeBankAuto } from '@/utils/functions/bank';
 import { CheckFormDataNull, listUserStatuss, setFieldError } from '@/utils/functions/default-function';
 import { BankInteface } from '@/utils/interfaces/bank.interface';
 import { UserInterface } from '@/utils/interfaces/user.interface';
@@ -74,6 +75,7 @@ const defaultBankData: BankInteface = {
   accountNumber: '',
   accountName: '',
   branch: '',
+  code: '',
 };
 
 interface Bank {
@@ -88,24 +90,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
   const [bankData, setBankData] = React.useState<BankInteface>(defaultBankData);
   const [formError, setFormError] = React.useState<any>();
 
-  const [banks, setBanks] = React.useState<Bank[]>([]);
-  const [isLoadingBanks, setIsLoadingBanks] = React.useState(false);
-
-  const getBanks = async () => {
-    setIsLoadingBanks(true);
-    try {
-      const response = await axios.get<{ data: Bank[] }>('https://api.vietqr.io/v2/banks');
-      setBanks(response.data.data);
-    } catch (error) {
-      console.log('Error fetching banks:', error);
-      alert('Không thể tải danh sách ngân hàng, vui lòng thử lại');
-    } finally {
-      setIsLoadingBanks(false);
-    }
-  };
-
   React.useEffect(() => {
-    getBanks();
     if (openEdit !== null) {
       setFormData({
         username: openEdit?.username ?? '',
@@ -124,6 +109,7 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
         accountNumber: openEdit?.bank?.accountNumber ?? '',
         bankName: openEdit?.bank?.bankName ?? '',
         branch: openEdit?.bank?.branch ?? '',
+        code: openEdit?.bank?.code ?? '',
       });
     }
   }, [openEdit]);
@@ -181,6 +167,9 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
     }
 
     try {
+      const selectedBank = getBanks.find((item: TypeBankAuto) => item.code === bankData.code);
+      bankData.bankName = selectedBank ? selectedBank.shortName : '';
+
       const newFormData = { ...{ bank: bankData }, ...formData };
       const response = await UpdateUserById(openEdit._id, newFormData);
       if (response.status === 200 || response.status === 201) {
@@ -362,12 +351,11 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
               <FormControl fullWidth>
                 <Select
                   fullWidth
-                  value={bankData?.bankName}
+                  value={bankData?.code}
                   onChange={handleBankChange}
                   displayEmpty
                   variant="outlined"
-                  name="bankName"
-                  disabled={isLoadingBanks}
+                  name="code"
                   sx={{
                     mb: { xs: 1, sm: 2 },
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
@@ -379,9 +367,9 @@ export default function EditUser({ openEdit, setOpenEdit, setIsReload, listRefer
                   }}
                 >
                   <MenuItem value="" disabled sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                    {isLoadingBanks ? 'Đang tải ngân hàng...' : '-- Tên ngân hàng --'}
+                    {'-- Tên ngân hàng --'}
                   </MenuItem>
-                  {banks.map((bank) => (
+                  {getBanks.map((bank: TypeBankAuto) => (
                     <MenuItem key={bank.code} value={bank.code} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       {bank.shortName}
                     </MenuItem>

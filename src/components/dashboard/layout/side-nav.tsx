@@ -3,16 +3,20 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';
+import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import { RoleUsers } from '@/utils/enum/role.enum';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { toast } from 'react-toastify';
 
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
+import { DepoWithdrawContext } from '@/contexts/noti-with-depo.context';
 import { UserContext } from '@/contexts/user-context';
+import { useSocket } from '@/hooks/socket';
 import { Logo } from '@/components/core/logo';
 
 import { navItems } from './config';
@@ -23,6 +27,36 @@ export function SideNav(): React.JSX.Element {
 
   const userContext = React.useContext(UserContext);
   const user = userContext?.user;
+
+  const socket = useSocket();
+  const depoWithContext = React.useContext(DepoWithdrawContext);
+  const checkDepositsSession = depoWithContext?.checkDepositsSession;
+  const checkWithdrawsSession = depoWithContext?.checkWithdrawsSession;
+
+  React.useEffect(() => {
+    if (!socket) return; // Tránh lỗi khi user hoặc socket chưa sẵn sàng
+
+    socket.on('deposit-money', (msg) => {
+      console.log(123123);
+
+      if (msg?.data?.status === DepositStatusEnum.PENDING) {
+        toast.warning('Có đơn nạp tiền mới chờ phê duyệt');
+        checkDepositsSession?.();
+      }
+    });
+
+    socket.on('withdraw-money', (msg) => {
+      if (msg?.data?.status === DepositStatusEnum.PENDING) {
+        toast.warning('Có đơn rút tiền mới chờ phê duyệt');
+        checkWithdrawsSession?.();
+      }
+    });
+
+    return () => {
+      socket.off('deposit-money');
+      socket.off('withdraw-money');
+    };
+  }, [socket, checkDepositsSession, checkWithdrawsSession]);
 
   return (
     <Box

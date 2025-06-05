@@ -17,4 +17,6 @@ export interface BankInteface {
 
   // Transfer description content (e.g., "NAP123456" or user ID reference)
   transferContent?: string;
+
+  code?: number | string;
 }

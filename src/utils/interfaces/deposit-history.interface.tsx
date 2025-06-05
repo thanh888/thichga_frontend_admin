@@ -3,8 +3,9 @@ import { DepositStatusEnum } from '../enum/deposit-status.enum';
 
 // Interface for the DepositTransaction document
 export interface DepositTransactionInterface {
+  _id?: string;
   // ID of the user who made the deposit
-  userID?: string;
+  userID?: any | string;
 
   // Status of the deposit (e.g., PENDING, APPROVED, REJECTED)
   status?: DepositStatusEnum;
