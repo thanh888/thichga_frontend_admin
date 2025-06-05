@@ -37,6 +37,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 
+import HlsPlayer from '@/lib/video-player';
 import { useSocket } from '@/hooks/socket';
 
 // Define TeamEnum
@@ -318,11 +319,7 @@ export default function EditRoom({ data, setIsReload }: Readonly<Props>) {
     if (!formData?.urlLive || !formData?.urlType) return null;
 
     if (formData.urlType === UrlTypeEnum.M3U8) {
-      return (
-        <video controls src={formData.urlLive} style={{ width: '100%', maxHeight: '200px', marginTop: '8px' }}>
-          Your browser does not support the video tag.
-        </video>
-      );
+      return <HlsPlayer src={formData.urlLive} width="100%" height="200px" />;
     } else if (formData.urlType === UrlTypeEnum.IFRAME) {
       const embedUrl =
         formData.urlLive.includes('youtube.com') || formData.urlLive.includes('youtu.be')
