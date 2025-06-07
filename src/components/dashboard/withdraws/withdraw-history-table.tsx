@@ -80,6 +80,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+    [WithdrawStatusEnum.PROCESSING]: 'Đang xử lý',
     [WithdrawStatusEnum.SUCCESS]: 'Thành công',
     [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
   };
@@ -197,20 +198,6 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
               {data?.docs?.map((row) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
-                    // if (column.id === 'action') {
-                    //   return (
-                    //     <TableCell key={column.id} align={column.align}>
-                    //       <Button
-                    //         variant="outlined"
-                    //         size="small"
-                    //         disabled={row.status !== WithdrawStatusEnum.PENDING}
-                    //         onClick={() => handleOpenDialog(row)}
-                    //       >
-                    //         <BorderColorIcon />
-                    //       </Button>
-                    //     </TableCell>
-                    //   );
-                    // }
                     let value = row[column.id as keyof WithdrawHistoryFormData];
                     if (column.id === 'userID') {
                       value = row?.userID?.username || 'N/A';
