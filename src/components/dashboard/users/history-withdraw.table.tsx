@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
@@ -37,8 +38,10 @@ interface WithdrawHistoryFormData {
   userID: { _id: string; username: string };
   money: number;
   adminID: any;
-  status: string;
+  status: WithdrawStatusEnum;
   code: string;
+  referenceCode: string;
+  mode: DepositModeEnum;
   createdAt: string;
 }
 
@@ -88,6 +91,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+    [WithdrawStatusEnum.PROCESSING]: 'Đang xử lý',
     [WithdrawStatusEnum.SUCCESS]: 'Thành công',
     [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
   };
@@ -97,18 +101,19 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
     if (tab === 0) {
       return WithdrawStatusEnum.PENDING;
     } else if (tab === 1) {
+      return WithdrawStatusEnum.PROCESSING;
+    } else if (tab === 2) {
       return WithdrawStatusEnum.SUCCESS;
     } else {
       return WithdrawStatusEnum.REJECT;
     }
   };
-
   // Fetch data using API
   const fetchWithdraws = async () => {
     try {
       const status = getStatus(tabValue) ?? WithdrawStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}&user_id=${user_id}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
       const response = await WithdrawByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({
@@ -261,7 +266,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
                           <Button
                             variant="outlined"
                             size="small"
-                            disabled={row.status !== WithdrawStatusEnum.PENDING}
+                            disabled={![WithdrawStatusEnum.PENDING, WithdrawStatusEnum.PROCESSING].includes(row.status)}
                             onClick={() => handleOpenDialog(row)}
                           >
                             <BorderColorIcon />
@@ -270,12 +275,27 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
                       );
                     }
                     let value: any = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'referenceCode') {
+                      value = row?.referenceCode || '';
+                    }
                     if (column.id === 'userID') {
                       value = row.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
                       value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'bank') {
                       value = row.bank?.bankName || 'N/A';
+                    } else if (column.id === 'mode') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                          >
+                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : `Thủ công`}
+                          </Typography>
+                        </TableCell>
+                      );
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>
@@ -290,7 +310,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
                             }
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {statusLabels[row.status as WithdrawStatusEnum] || row.status}
+                            {statusLabels[row.status as WithdrawStatusEnum]}
                           </Typography>
                         </TableCell>
                       );
