@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { updateWithdrawStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import { ConvertMoneyVND } from '@/utils/functions/default-function';
 import { WithdrawTransactionInterface } from '@/utils/interfaces/withdraw-history.interface';
@@ -38,6 +39,13 @@ const statusLabels: { [key in TypeWithdraw]: string } = {
   [TypeWithdraw.MANUAL]: 'Rút thủ công',
   [TypeWithdraw.AUTO]: 'Rút tự động',
   [TypeWithdraw.REJECT]: 'Từ chối',
+};
+
+const statusLabelsOfAuto: { [key in WithdrawStatusEnum]: string } = {
+  [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+  [WithdrawStatusEnum.PROCESSING]: 'Đang xử lý',
+  [WithdrawStatusEnum.SUCCESS]: 'Thành công',
+  [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
 };
 
 const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialog, setOpenDialog }) => {
@@ -87,7 +95,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.SUCCESS });
       }
       if (newStatus === TypeWithdraw.AUTO) {
-        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.PENDING });
+        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.PROCESSING });
       }
 
       const response = await updateWithdrawStatusApi(openDialog._id, formData);
@@ -174,11 +182,20 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>
           <Select label="Trạng thái" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-            {Object.values(TypeWithdraw).map((status) => (
-              <MenuItem key={status} value={status}>
-                {statusLabels[status]}
-              </MenuItem>
-            ))}
+            {openDialog?.mode === DepositModeEnum.AUTO
+              ? Object.values(WithdrawStatusEnum).map(
+                  (status) =>
+                    status !== WithdrawStatusEnum.PENDING && (
+                      <MenuItem key={status} value={status}>
+                        {statusLabelsOfAuto[status]}
+                      </MenuItem>
+                    )
+                )
+              : Object.values(TypeWithdraw).map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {statusLabels[status]}
+                  </MenuItem>
+                ))}
           </Select>
         </FormControl>
         <TextField

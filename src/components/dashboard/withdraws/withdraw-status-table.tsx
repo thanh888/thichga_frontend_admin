@@ -38,7 +38,7 @@ interface WithdrawHistoryFormData {
   userID: { _id: string; username: string };
   money: number;
   adminID: any;
-  status: string;
+  status: WithdrawStatusEnum;
   code: string;
   referenceCode: string;
   mode: DepositModeEnum;
@@ -83,7 +83,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
-  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
+  const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('createdAt');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
     docs: [],
@@ -93,6 +93,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
+    [WithdrawStatusEnum.PROCESSING]: 'Đang xử lý',
     [WithdrawStatusEnum.SUCCESS]: 'Thành công',
     [WithdrawStatusEnum.REJECT]: 'Đã từ chối',
   };
@@ -102,6 +103,8 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     if (tab === 0) {
       return WithdrawStatusEnum.PENDING;
     } else if (tab === 1) {
+      return WithdrawStatusEnum.PROCESSING;
+    } else if (tab === 2) {
       return WithdrawStatusEnum.SUCCESS;
     } else {
       return WithdrawStatusEnum.REJECT;
@@ -223,7 +226,8 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             },
           }}
         >
-          <Tab label="Chờ xử lý" />
+          <Tab label="Chờ xử lý(Thủ Công)" />
+          <Tab label="Đang xử lý(Auto)" />
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
@@ -266,7 +270,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                           <Button
                             variant="outlined"
                             size="small"
-                            disabled={row.status !== WithdrawStatusEnum.PENDING || row.mode === DepositModeEnum.AUTO}
+                            disabled={![WithdrawStatusEnum.PENDING, WithdrawStatusEnum.PROCESSING].includes(row.status)}
                             onClick={() => handleOpenDialog(row)}
                           >
                             <BorderColorIcon />
@@ -292,7 +296,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                             bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
                           >
-                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : ``}
+                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : `Thủ công`}
                           </Typography>
                         </TableCell>
                       );
@@ -310,10 +314,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                             }
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {(row.mode === DepositModeEnum.AUTO &&
-                              row.status === WithdrawStatusEnum.PENDING &&
-                              'Đang xử lý') ??
-                              statusLabels[row.status as WithdrawStatusEnum]}
+                            {statusLabels[row.status as WithdrawStatusEnum]}
                           </Typography>
                         </TableCell>
                       );

@@ -74,8 +74,8 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [tabValue, setTabValue] = React.useState<number>(0);
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
-  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
-  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('createdAt');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc');
   const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
     docs: [],
     totalDocs: 0,

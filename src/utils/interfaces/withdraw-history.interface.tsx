@@ -1,3 +1,4 @@
+import { DepositModeEnum } from '../enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '../enum/withdraw-status.enum';
 import { BankInteface } from './bank.interface';
 
@@ -10,9 +11,14 @@ export interface WithdrawTransactionInterface {
   // Status of the withdrawal (e.g., PENDING, APPROVED, REJECTED)
   status?: WithdrawStatusEnum;
 
+  code?: string;
+
+  referenceCode?: string;
+
   // Amount of money withdrawn
   money?: number;
 
+  mode: DepositModeEnum;
   // ID of the admin who processed the withdrawal
   adminID?: string;
 
