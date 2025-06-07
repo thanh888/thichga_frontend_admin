@@ -79,3 +79,15 @@ export const odds = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5
 export const convertDateTime = (dateTime: string) => {
   return new Date(dateTime ?? '').toLocaleString('vi-VN');
 };
+
+export const convertDateTimeVN = (dateInput: string | Date): string => {
+  const date = new Date(dateInput);
+  return date.toLocaleString('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+};

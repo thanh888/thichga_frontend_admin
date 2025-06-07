@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 import { WidthdrawPaginate } from '@/services/dashboard/withdraw-history.api';
+import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
+import { convertDateTimeVN } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -24,14 +26,23 @@ import UpdateWithdrawStatusComponent from './update-withdraw-status';
 
 // Định nghĩa interface cho dữ liệu bảng
 interface WithdrawHistoryFormData {
-  bank: any;
+  bank: {
+    bankName?: string;
+    accountNumber?: string;
+    accountName?: string;
+    branch?: string;
+    transferContent?: string;
+  };
   feedback: string;
   userID: any;
   money: number;
   adminID: any;
-  status: string;
+  status: WithdrawStatusEnum;
   code: string;
   createdAt: string;
+  referenceCode: string;
+  mode: DepositModeEnum;
+  updatedAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -45,8 +56,12 @@ interface Column {
 
 const columns: Column[] = [
   { id: 'code', label: 'Mã giao dịch', minWidth: 120, align: 'left' },
+  { id: 'referenceCode', label: 'Mã tham chiếu', minWidth: 120, align: 'left' },
+
   { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
   { id: 'bank', label: 'Ngân hàng', minWidth: 150, align: 'left' },
+  { id: 'mode', label: 'Phương thức', minWidth: 120, align: 'left' },
+
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -54,10 +69,11 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'feedback', label: 'Ghi chú', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'updatedAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
+  { id: 'feedback', label: 'Ghi chú', minWidth: 250, align: 'left' },
   // { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
 ];
 
@@ -68,7 +84,7 @@ interface Props {
 
 const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -161,7 +177,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     >
       <Paper sx={{ width: '100%' }}>
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Danh sách tất cả yêu cầu rút tiền
+          Lịch sử rút tiền
         </Typography>
 
         <TextField
@@ -173,7 +189,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           onChange={handleSearch}
           sx={{ mb: 2, mx: 2 }}
         />
-        <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
+        <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-history-table">
             <TableHead>
               <TableRow>
@@ -195,43 +211,67 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.docs?.map((row) => (
+              {data?.docs?.map((row: WithdrawHistoryFormData) => (
                 <TableRow hover tabIndex={-1} key={row.code}>
                   {columns.map((column) => {
-                    let value = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'action') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={![WithdrawStatusEnum.PENDING, WithdrawStatusEnum.PROCESSING].includes(row.status)}
+                            onClick={() => handleOpenDialog(row)}
+                          >
+                            <BorderColorIcon />
+                          </Button>
+                        </TableCell>
+                      );
+                    }
+                    let value: any = row[column.id as keyof WithdrawHistoryFormData];
+                    if (column.id === 'referenceCode') {
+                      value = row?.referenceCode || '';
+                    }
                     if (column.id === 'userID') {
-                      value = row?.userID?.username || 'N/A';
+                      value = row.userID?.username || 'N/A';
                     } else if (column.id === 'adminID') {
                       value = row?.adminID?.username || 'N/A';
                     } else if (column.id === 'bank') {
-                      value = row?.bank?.bankName || 'N/A';
+                      value = row.bank?.bankName || 'N/A';
+                    } else if (column.id === 'mode') {
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          <Typography
+                            variant="caption"
+                            bgcolor={row.mode === DepositModeEnum.AUTO || row.referenceCode ? '#4caf50 ' : '#ff9800 '}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                          >
+                            {(row.mode === DepositModeEnum.AUTO || row.referenceCode) && row.referenceCode
+                              ? 'Tự động'
+                              : `Thủ công`}
+                          </Typography>
+                        </TableCell>
+                      );
                     } else if (column.id === 'status') {
                       return (
                         <TableCell key={column.id} align={column.align}>
                           <Typography
                             variant="caption"
-                            bgcolor={
-                              row.status === WithdrawStatusEnum.SUCCESS
-                                ? '#1de9b6'
-                                : row.status === WithdrawStatusEnum.REJECT
-                                  ? '#e57373'
-                                  : '#bdbdbd'
-                            }
-                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                            bgcolor={row.mode === DepositModeEnum.AUTO || row.referenceCode ? '#4caf50 ' : '#ff9800 '}
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
                           >
-                            {statusLabels[row.status as WithdrawStatusEnum] || row.status}
+                            {(row.mode === DepositModeEnum.AUTO || row.referenceCode) && row.referenceCode
+                              ? 'Tự động'
+                              : row.status === WithdrawStatusEnum.PENDING
+                                ? 'Chưa xử lý'
+                                : `Thủ công`}
                           </Typography>
                         </TableCell>
                       );
                     } else if (column.id === 'createdAt') {
-                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      });
+                      convertDateTimeVN(row.createdAt);
+                    } else if (column.id === 'updatedAt') {
+                      convertDateTimeVN(row.updatedAt);
                     }
                     return (
                       <TableCell key={column.id} align={column.align}>
@@ -245,7 +285,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
           count={data?.totalDocs}
           rowsPerPage={rowsPerPage}

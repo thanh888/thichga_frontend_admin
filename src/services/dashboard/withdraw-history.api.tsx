@@ -19,3 +19,8 @@ export const updateWithdrawStatusApi = async (id: string, formData: any) => {
   const res = await axiosCustomize.put(`/withdraw-history/${id}/status`, formData);
   return res;
 };
+
+export const updateWithdrawStatusAutoApi = async (id: string, formData: any) => {
+  const res = await axiosCustomize.put(`/withdraw-history/${id}/status-auto`, formData);
+  return res;
+};

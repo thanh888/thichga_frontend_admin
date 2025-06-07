@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { updateWithdrawStatusApi } from '@/services/dashboard/withdraw-history.api';
+import { updateWithdrawStatusApi, updateWithdrawStatusAutoApi } from '@/services/dashboard/withdraw-history.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
 import { ConvertMoneyVND } from '@/utils/functions/default-function';
@@ -71,7 +71,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
   // Handle status update
   const handleUpdateStatus = async () => {
     if (!newStatus || newStatus === openDialog?.status) {
-      toast.warning('Vui lòng chọn trạng thái');
+      toast.warning('Vui lòng chọn trạng thái khác');
       return;
     }
 
@@ -92,28 +92,31 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       };
 
       if (newStatus === TypeWithdraw.MANUAL) {
-        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.SUCCESS });
+        Object.assign(formData, { mode: DepositModeEnum.MANUAL, status: WithdrawStatusEnum.SUCCESS });
       }
       if (newStatus === TypeWithdraw.AUTO) {
-        Object.assign(formData, { mode: newStatus, status: WithdrawStatusEnum.PROCESSING });
-      }
-
-      const response = await updateWithdrawStatusApi(openDialog._id, formData);
-      if (response.status === 200 || response.status === 201) {
-        toast.success('Cập nhật trạng thái thành công');
-        setIsReload(true); // Trigger refresh
-
-        if (socket && newStatus === TypeWithdraw.MANUAL) {
-          socket.emit('withdraw-money', {
-            userID: openDialog.userID._id,
-            status: formData.status,
-            money: openDialog?.money,
-          });
-
-          socket.off('withdraw-money');
+        Object.assign(formData, { mode: DepositModeEnum.AUTO, status: WithdrawStatusEnum.PROCESSING });
+        const response = await updateWithdrawStatusAutoApi(openDialog._id, formData);
+        if (response.status === 200 || response.status === 201) {
+          toast.success('Cập nhật trạng thái thành công');
+          setIsReload(true); // Trigger refresh
         }
       } else {
-        toast.error('Cập nhật trạng thái thất bại');
+        const response = await updateWithdrawStatusApi(openDialog._id, formData);
+        if (response.status === 200 || response.status === 201) {
+          toast.success('Cập nhật trạng thái thành công');
+          setIsReload(true); // Trigger refresh
+
+          if (socket && newStatus === TypeWithdraw.MANUAL) {
+            socket.emit('withdraw-money', {
+              userID: openDialog.userID._id,
+              status: formData.status,
+              money: openDialog?.money,
+            });
+
+            socket.off('withdraw-money');
+          }
+        }
       }
     } catch (error) {
       console.error('Error updating withdraw status:', error);
@@ -182,7 +185,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         <FormControl fullWidth sx={{ mt: 2 }}>
           <InputLabel>Trạng thái</InputLabel>
           <Select label="Trạng thái" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-            {openDialog?.mode === DepositModeEnum.AUTO
+            {openDialog?.mode === DepositModeEnum.AUTO || openDialog?.status === WithdrawStatusEnum.PROCESSING
               ? Object.values(WithdrawStatusEnum).map(
                   (status) =>
                     status !== WithdrawStatusEnum.PENDING && (

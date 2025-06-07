@@ -4,6 +4,7 @@ import * as React from 'react';
 import { WithdrawByStatusApi } from '@/services/dashboard/withdraw-history.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
+import { convertDateTimeVN } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -43,6 +44,7 @@ interface WithdrawHistoryFormData {
   referenceCode: string;
   mode: DepositModeEnum;
   createdAt: string;
+  updatedAt: string;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -67,10 +69,12 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
+  { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'updatedAt', label: 'Ngày Cập nhật', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
+  { id: 'feedback', label: 'Phản hồi', minWidth: 220, align: 'center' },
 ];
 
 interface Props {
@@ -81,7 +85,7 @@ interface Props {
 const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [tabValue, setTabValue] = React.useState<number>(0);
   const [page, setPage] = React.useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('createdAt');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -226,7 +230,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             },
           }}
         >
-          <Tab label="Chờ xử lý(Thủ Công)" />
+          <Tab label="Chờ xử lý" />
           <Tab label="Đang xử lý(Auto)" />
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
@@ -239,7 +243,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           onChange={handleSearch}
           sx={{ my: 2, mx: 2 }}
         />
-        <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
+        <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-status-table">
             <TableHead>
               <TableRow>
@@ -293,10 +297,14 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         <TableCell key={column.id} align={column.align}>
                           <Typography
                             variant="caption"
-                            bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
+                            bgcolor={row.mode === DepositModeEnum.AUTO || row.referenceCode ? '#4caf50 ' : '#ff9800 '}
                             sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
                           >
-                            {row.mode === DepositModeEnum.AUTO ? 'Tự động' : `Thủ công`}
+                            {(row.mode === DepositModeEnum.AUTO || row.referenceCode) && row.referenceCode
+                              ? 'Tự động'
+                              : row.status === WithdrawStatusEnum.PENDING
+                                ? 'Chưa xử lý'
+                                : `Thủ công`}
                           </Typography>
                         </TableCell>
                       );
@@ -319,14 +327,9 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         </TableCell>
                       );
                     } else if (column.id === 'createdAt') {
-                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      });
+                      value = convertDateTimeVN(row.createdAt);
+                    } else if (column.id === 'updatedAt') {
+                      value = convertDateTimeVN(row.updatedAt);
                     }
                     return (
                       <TableCell key={column.id} align={column.align}>
@@ -340,7 +343,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[10, 35, 50, 100]}
           component="div"
           count={data?.totalDocs}
           rowsPerPage={rowsPerPage}
