@@ -3,6 +3,7 @@
 import * as React from 'react';
 import RouterLink from 'next/link';
 import { usePathname } from 'next/navigation';
+import { RoleUsers } from '@/utils/enum/role.enum';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -15,6 +16,7 @@ import { CaretUpDown as CaretUpDownIcon } from '@phosphor-icons/react/dist/ssr/C
 import type { NavItemConfig } from '@/types/nav';
 import { paths } from '@/paths';
 import { isNavItemActive } from '@/lib/is-nav-item-active';
+import { UserContext } from '@/contexts/user-context';
 import { Logo } from '@/components/core/logo';
 
 import { navItems } from './config';
@@ -28,6 +30,9 @@ export interface MobileNavProps {
 
 export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element {
   const pathname = usePathname() ?? '';
+  const userContext = React.useContext(UserContext);
+
+  const user = userContext?.user;
 
   return (
     <Drawer
@@ -64,18 +69,28 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
       </Stack>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
       <Box component="nav" sx={{ flex: '1 1 auto', p: '12px' }}>
-        {renderNavItems({ pathname, items: navItems })}
+        {user && renderNavItems({ pathname, items: navItems, role: user.role as RoleUsers })}
       </Box>
       <Divider sx={{ borderColor: 'var(--mui-palette-neutral-700)' }} />
     </Drawer>
   );
 }
 
-function renderNavItems({ items = [], pathname }: { items?: NavItemConfig[]; pathname: string }): React.JSX.Element {
+function renderNavItems({
+  items = [],
+  pathname,
+  role,
+}: {
+  items?: NavItemConfig[];
+  pathname: string;
+  role: RoleUsers;
+}): React.JSX.Element {
   const children = items.reduce((acc: React.ReactNode[], curr: NavItemConfig): React.ReactNode[] => {
     const { key, ...item } = curr;
 
-    acc.push(<NavItem key={key} pathname={pathname} {...item} />);
+    if (item.role.includes(role)) {
+      acc.push(<NavItem key={key} pathname={pathname} {...item} />);
+    }
 
     return acc;
   }, []);
