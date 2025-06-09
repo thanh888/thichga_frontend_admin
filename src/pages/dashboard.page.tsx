@@ -29,11 +29,14 @@ export default function HomePage(): React.JSX.Element {
     userOnline: 0,
   });
 
+  const [userOnline, setUserOnline] = React.useState<number>(0);
+
   const getCountStats = async () => {
     try {
       const response = await getCountStatsApi();
       if (response.status === 200 || response.status === 201) {
         setCountStats(response.data);
+        setUserOnline(response.data.userOnline);
       }
     } catch (error) {
       console.log(error);
@@ -57,7 +60,7 @@ export default function HomePage(): React.JSX.Element {
         <TotalWithdraw sx={{ height: '100%' }} value={countStats?.countWithdraw?.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <UsersOnline sx={{ height: '100%' }} value={countStats?.userOnline?.toString()} />
+        <UsersOnline sx={{ height: '100%' }} value={userOnline.toString()} setValue={setUserOnline} />
       </Grid>
       <Grid lg={12} sm={12} xs={12} p={0}></Grid>
       <Grid lg={6} xs={12}>

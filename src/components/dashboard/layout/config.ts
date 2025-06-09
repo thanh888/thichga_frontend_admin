@@ -43,13 +43,13 @@ export const navItems = [
     role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
   },
   { key: 'deposits', title: 'Đơn nạp tiền', href: paths.dashboard.deposits, icon: 'deposits', role: [RoleUsers.ADMIN] },
-  {
-    key: 'auto_deposits',
-    title: 'Đơn nạp tiền tự động',
-    href: paths.dashboard.auto_deposits,
-    icon: 'deposits',
-    role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
-  },
+  // {
+  //   key: 'auto_deposits',
+  //   title: 'Đơn nạp tiền tự động',
+  //   href: paths.dashboard.auto_deposits,
+  //   icon: 'deposits',
+  //   role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
+  // },
   {
     key: 'withdraws',
     title: 'Đơn rút tiền',

@@ -10,9 +10,24 @@ import { Users as UsersIcon } from '@phosphor-icons/react/dist/ssr/Users';
 export interface UserActiveProps {
   sx?: SxProps;
   value: string;
+  setValue: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function UsersOnline({ sx, value }: UserActiveProps): React.JSX.Element {
+export function UsersOnline({ sx, value, setValue }: UserActiveProps): React.JSX.Element {
+  const baseValue = Number(value) || 0;
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setValue((prev) => {
+        const delta = Math.floor(Math.random() * 7) - 3; // -3 đến +3
+        const next = prev + delta;
+        return next < 0 ? 0 : next;
+      });
+    }, 5000); // 5 giây thay đổi một lần
+
+    return () => clearInterval(interval);
+  }, [setValue]);
+
   return (
     <Card sx={sx}>
       <CardContent>
