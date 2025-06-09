@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { useParams } from 'next/navigation';
 import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
+import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
+import { convertDateTimeVN } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -20,6 +22,7 @@ import {
   TableRow,
   TableSortLabel,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -32,7 +35,12 @@ interface DepositHistoryFormData {
   adminID: any;
   status: string;
   code: string;
+  referenceCode: string;
+  feedback: string;
   createdAt: string;
+  updatedAt: string;
+  mode: DepositModeEnum;
+  method: DepositMethod;
 }
 
 // Định nghĩa interface cho cột bảng
@@ -45,8 +53,9 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'code', label: 'Mã giao dịch', minWidth: 100, align: 'left' },
-  { id: 'userID', label: 'Người dùng', minWidth: 150, align: 'left' },
+  { id: 'code', label: 'Mã code', minWidth: 100, align: 'left' },
+  { id: 'userID', label: 'Người tạo', minWidth: 150, align: 'left' },
+  { id: 'referenceCode', label: 'Mã tự động', minWidth: 100, align: 'left' },
   {
     id: 'money',
     label: 'Số tiền (VND)',
@@ -54,10 +63,13 @@ const columns: Column[] = [
     align: 'right',
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
-  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
+  { id: 'mode', label: 'Phương thức', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
+  { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'updatedAt', label: 'Ngày cập nhật', minWidth: 150, align: 'left' },
   { id: 'action', label: 'Hành động', minWidth: 120, align: 'center' },
+  { id: 'feedback', label: 'Phản hồi', minWidth: 250, align: 'left' },
 ];
 
 interface Props {
@@ -76,6 +88,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     totalDocs: 0,
   });
   const [openDialog, setOpenDialog] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
 
   const statusLabels: { [key in DepositStatusEnum]: string } = {
     [DepositStatusEnum.PENDING]: 'Chờ xử lý',
@@ -94,12 +107,20 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     }
   };
 
+  const [searchTerm, setSearchTerm] = React.useState<string>('');
+
+  // Handle search
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
   // Fetch data using API
   const fetchDeposits = async () => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}&user_id=${user_id}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}&user_id=${user_id}&search=${encodeURIComponent(searchTerm)}`;
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
@@ -121,7 +142,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [tabValue, page, rowsPerPage, sortField, sortOrder]);
+  }, [tabValue, page, rowsPerPage, sortField, sortOrder, searchTerm]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -204,8 +225,17 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
-
-        <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
+        <TextField
+          label="Tìm kiếm"
+          placeholder="Tìm theo mã, nội dung..."
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={handleSearch}
+          fullWidth
+          sx={{ my: 2 }}
+        />
+        <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-status-table">
             <TableHead>
               <TableRow>
@@ -227,64 +257,132 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.docs?.map((row) => (
-                <TableRow hover tabIndex={-1} key={row.code}>
-                  {columns.map((column) => {
-                    if (column.id === 'action') {
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          <Button
-                            variant="outlined"
-                            disabled={row.status !== DepositStatusEnum.PENDING}
-                            size="small"
-                            onClick={() => handleOpenDialog(row)}
-                          >
-                            <BorderColorIcon />
-                          </Button>
-                        </TableCell>
-                      );
-                    }
-                    let value = row[column.id as keyof DepositHistoryFormData];
-                    if (column.id === 'userID') {
-                      value = row?.userID?.username || 'N/A';
-                    } else if (column.id === 'adminID') {
-                      value = row?.adminID?.username || 'N/A';
-                    } else if (column.id === 'status') {
-                      return (
-                        <TableCell key={column.id} align={column.align}>
-                          <Typography
-                            variant="caption"
-                            bgcolor={
-                              row.status === DepositStatusEnum.SUCCESS
-                                ? '#1de9b6'
-                                : row.status === DepositStatusEnum.REJECT
-                                  ? '#e57373'
-                                  : '#bdbdbd'
-                            }
-                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
-                          >
-                            {statusLabels[row.status as DepositStatusEnum] || row.status}
-                          </Typography>
-                        </TableCell>
-                      );
-                    } else if (column.id === 'createdAt') {
-                      value = new Date(row.createdAt).toLocaleString('vi-VN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      });
-                    }
-                    return (
-                      <TableCell key={column.id} align={column.align}>
-                        {column.format && typeof value === 'number' ? column.format(value) : value}
-                      </TableCell>
-                    );
-                  })}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    Đang tải dữ liệu...
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : data?.docs?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} align="center">
+                    Không có dữ liệu
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.docs?.map((row) => {
+                  // Extracted logic for status background color
+                  const getStatusBgColor = (status: DepositStatusEnum) => {
+                    if (status === DepositStatusEnum.SUCCESS) return '#1de9b6';
+                    if (status === DepositStatusEnum.REJECT) return '#e57373';
+                    return '#bdbdbd';
+                  };
+
+                  // Extracted logic for rendering cell content
+                  const renderCell = (column: Column) => {
+                    switch (column.id) {
+                      case 'action':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            <Button
+                              variant="outlined"
+                              disabled={row.status !== DepositStatusEnum.PENDING}
+                              size="small"
+                              onClick={() => handleOpenDialog(row)}
+                            >
+                              <BorderColorIcon />
+                            </Button>
+                          </TableCell>
+                        );
+                      case 'userID':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row?.userID?.username ?? 'N/A'}
+                          </TableCell>
+                        );
+                      case 'referenceCode':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row?.referenceCode ?? ''}
+                          </TableCell>
+                        );
+                      case 'adminID':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row?.adminID?.username ?? 'N/A'}
+                          </TableCell>
+                        );
+                      case 'mode':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            <Typography
+                              variant="caption"
+                              bgcolor={row.mode === DepositModeEnum.AUTO ? '#1de9b6' : '#e57373'}
+                              sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                            >
+                              {row.mode === DepositModeEnum.AUTO ? 'Tự động' : `Thủ công(${row.method})`}
+                            </Typography>
+                          </TableCell>
+                        );
+                      case 'status':
+                        const statusBgColor = getStatusBgColor(row.status as DepositStatusEnum);
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            <Typography
+                              variant="caption"
+                              bgcolor={statusBgColor}
+                              sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
+                            >
+                              {statusLabels[row.status as DepositStatusEnum] ?? row.status}
+                            </Typography>
+                          </TableCell>
+                        );
+                      case 'createdAt':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {convertDateTimeVN(row.createdAt)}
+                          </TableCell>
+                        );
+                      case 'updatedAt':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {convertDateTimeVN(row.updatedAt)}
+                          </TableCell>
+                        );
+                      case 'money':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {column.format && typeof row.money === 'number' ? column.format(row.money) : row.money}
+                          </TableCell>
+                        );
+                      case 'feedback':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row?.feedback ?? ''}
+                          </TableCell>
+                        );
+                      case 'code':
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row?.code ?? ''}
+                          </TableCell>
+                        );
+                      default:
+                        return (
+                          <TableCell key={column.id} align={column.align}>
+                            {row[column.id as keyof DepositHistoryFormData]}
+                          </TableCell>
+                        );
+                    }
+                  };
+
+                  return (
+                    <TableRow hover tabIndex={-1} key={row.code}>
+                      {columns.map((column) => renderCell(column))}
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </TableContainer>

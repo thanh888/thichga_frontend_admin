@@ -74,6 +74,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
+  const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
@@ -93,7 +94,10 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const fetchDeposits = async () => {
     try {
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
+      let query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}`;
+      if (usernameFilter) {
+        query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
       const response = await paginate(query);
       if (response.status === 200 || response.status === 201) {
         // Transform userID and adminID to usernames
@@ -124,11 +128,17 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [page, rowsPerPage, searchTerm, sortField, sortOrder]);
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Hàm xử lý filter username
+  const handleUsernameFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsernameFilter(event.target.value);
     setPage(0);
   };
 
@@ -165,15 +175,26 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
           Danh sách tất cả yêu cầu nạp tiền
         </Typography>
-        <TextField
-          label="Tìm kiếm"
-          variant="outlined"
-          size="small"
-          fullWidth
-          value={searchTerm}
-          onChange={handleSearch}
-          sx={{ mb: 2, mx: 2 }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, px: 2, mb: 2 }}>
+          <TextField
+            label="Tìm kiếm"
+            placeholder="Tìm theo mã, nội dung..."
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <TextField
+            label="Lọc theo Username"
+            placeholder="Nhập username"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={usernameFilter}
+            onChange={handleUsernameFilter}
+          />
+        </Box>
         <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-history-table">
             <TableHead>

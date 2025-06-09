@@ -21,6 +21,7 @@ import {
   TableRow,
   TableSortLabel,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -82,6 +83,9 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('createdAt');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = React.useState<string>('');
+  const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
+
   const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
     docs: [],
     totalDocs: 0,
@@ -114,7 +118,10 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${mode}`;
+      let query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${mode}&search=${searchTerm}`;
+      if (usernameFilter) {
+        query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
@@ -138,7 +145,7 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [tabValue, page, rowsPerPage, sortField, sortOrder, mode]);
+  }, [tabValue, page, rowsPerPage, sortField, sortOrder, mode, searchTerm, usernameFilter]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -169,6 +176,18 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   // Handle page change
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
+  };
+
+  // Handle search
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Handle username filter
+  const handleUsernameFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsernameFilter(event.target.value);
+    setPage(0);
   };
 
   // Handle rows per page change
@@ -230,6 +249,26 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
+        <Box sx={{ display: 'flex', gap: 2, px: 2, my: 2 }}>
+          <TextField
+            label="Tìm kiếm"
+            placeholder="Tìm theo mã, nội dung..."
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={handleSearch}
+            fullWidth
+          />
+          <TextField
+            label="Lọc theo Username"
+            placeholder="Nhập username"
+            variant="outlined"
+            size="small"
+            value={usernameFilter}
+            onChange={handleUsernameFilter}
+            fullWidth
+          />
+        </Box>
 
         <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-status-table">

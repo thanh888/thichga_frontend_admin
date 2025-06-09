@@ -86,6 +86,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
+  const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
@@ -105,7 +106,10 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const fetchWithdraws = async () => {
     try {
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}`;
+      let query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}`;
+      if (usernameFilter) {
+        query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
       const response = await WidthdrawPaginate(query);
       if (response.status === 200 || response.status === 201) {
         const transformedData = {
@@ -131,11 +135,17 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchWithdraws();
-  }, [page, rowsPerPage, searchTerm, sortField, sortOrder]);
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
 
   // Handle search
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Handle username filter
+  const handleUsernameFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsernameFilter(event.target.value);
     setPage(0);
   };
 
@@ -179,16 +189,26 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
         <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
           Lịch sử rút tiền
         </Typography>
-
-        <TextField
-          label="Tìm kiếm"
-          variant="outlined"
-          size="small"
-          fullWidth
-          value={searchTerm}
-          onChange={handleSearch}
-          sx={{ mb: 2, mx: 2 }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, px: 2, mb: 2 }}>
+          <TextField
+            label="Tìm kiếm"
+            placeholder="Tìm theo mã, nội dung..."
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <TextField
+            label="Lọc theo Username"
+            placeholder="Nhập username"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={usernameFilter}
+            onChange={handleUsernameFilter}
+          />
+        </Box>
         <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-history-table">
             <TableHead>

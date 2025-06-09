@@ -19,7 +19,13 @@ export const navItems = [
     icon: 'users',
     role: [RoleUsers.ADMIN],
   },
-  { key: 'Games', title: 'Games', href: paths.dashboard.games, icon: 'game', role: [RoleUsers.ADMIN] },
+  {
+    key: 'Games',
+    title: 'Games',
+    href: paths.dashboard.games,
+    icon: 'game',
+    role: [RoleUsers.ADMIN, RoleUsers.MANA_ROOM],
+  },
 
   {
     key: 'bet_room',
@@ -42,7 +48,13 @@ export const navItems = [
     icon: 'modes',
     role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
   },
-  { key: 'deposits', title: 'Đơn nạp tiền', href: paths.dashboard.deposits, icon: 'deposits', role: [RoleUsers.ADMIN] },
+  {
+    key: 'deposits',
+    title: 'Đơn nạp tiền',
+    href: paths.dashboard.deposits,
+    icon: 'deposits',
+    role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
+  },
   // {
   //   key: 'auto_deposits',
   //   title: 'Đơn nạp tiền tự động',

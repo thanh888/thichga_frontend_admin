@@ -87,6 +87,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
+  const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('createdAt');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
@@ -120,7 +121,10 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     try {
       const status = getStatus(tabValue) ?? WithdrawStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      let query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      if (usernameFilter) {
+        query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
       const response = await WithdrawByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({
@@ -145,7 +149,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchWithdraws();
-  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder]);
+  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -156,6 +160,12 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   // Handle search
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+    setPage(0);
+  };
+
+  // Handle username filter
+  const handleUsernameFilter = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUsernameFilter(event.target.value);
     setPage(0);
   };
 
@@ -235,14 +245,26 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
-        <TextField
-          label="Tìm kiếm"
-          variant="outlined"
-          size="small"
-          value={searchTerm}
-          onChange={handleSearch}
-          sx={{ my: 2, mx: 2 }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, px: 2, my: 2 }}>
+          <TextField
+            label="Tìm kiếm"
+            placeholder="Tìm theo mã, nội dung..."
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={handleSearch}
+            fullWidth
+          />
+          <TextField
+            label="Lọc theo Username"
+            placeholder="Nhập username"
+            variant="outlined"
+            size="small"
+            value={usernameFilter}
+            onChange={handleUsernameFilter}
+            fullWidth
+          />
+        </Box>
         <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-status-table">
             <TableHead>
