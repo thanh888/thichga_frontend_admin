@@ -17,7 +17,7 @@ export const navItems = [
     title: 'Người dùng',
     href: paths.dashboard.user_account,
     icon: 'users',
-    role: [RoleUsers.ADMIN],
+    role: [RoleUsers.ADMIN, RoleUsers.MANA_DEPOSIT_WITHDRAW],
   },
   {
     key: 'Games',

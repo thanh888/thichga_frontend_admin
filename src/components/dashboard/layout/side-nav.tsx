@@ -36,16 +36,14 @@ export function SideNav(): React.JSX.Element {
   React.useEffect(() => {
     if (!socket) return; // Tránh lỗi khi user hoặc socket chưa sẵn sàng
 
-    socket.on('deposit-money', (msg) => {
-      console.log(123123);
-
+    socket.on('request-deposit', (msg) => {
       if (msg?.data?.status === DepositStatusEnum.PENDING) {
         toast.warning('Có đơn nạp tiền mới chờ phê duyệt');
         checkDepositsSession?.();
       }
     });
 
-    socket.on('withdraw-money', (msg) => {
+    socket.on('request-withdraw', (msg) => {
       if (msg?.data?.status === DepositStatusEnum.PENDING) {
         toast.warning('Có đơn rút tiền mới chờ phê duyệt');
         checkWithdrawsSession?.();
@@ -53,8 +51,8 @@ export function SideNav(): React.JSX.Element {
     });
 
     return () => {
-      socket.off('deposit-money');
-      socket.off('withdraw-money');
+      socket.off('request-deposit');
+      socket.off('request-withdraw');
     };
   }, [socket, checkDepositsSession, checkWithdrawsSession]);
 

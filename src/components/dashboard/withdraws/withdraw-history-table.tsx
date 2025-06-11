@@ -70,7 +70,7 @@ const columns: Column[] = [
     format: (value: number) => value.toLocaleString('vi-VN'),
   },
   { id: 'createdAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
-  { id: 'updatedAt', label: 'Ngày tạo', minWidth: 150, align: 'left' },
+  { id: 'updatedAt', label: 'Ngày cập nhật', minWidth: 150, align: 'left' },
   { id: 'status', label: 'Trạng thái', minWidth: 150, align: 'left' },
   { id: 'adminID', label: 'Quản trị viên', minWidth: 150, align: 'left' },
   { id: 'feedback', label: 'Ghi chú', minWidth: 250, align: 'left' },
@@ -289,9 +289,9 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         </TableCell>
                       );
                     } else if (column.id === 'createdAt') {
-                      convertDateTimeVN(row.createdAt);
+                      value = convertDateTimeVN(row.createdAt);
                     } else if (column.id === 'updatedAt') {
-                      convertDateTimeVN(row.updatedAt);
+                      value = convertDateTimeVN(row.createdAt);
                     }
                     return (
                       <TableCell key={column.id} align={column.align}>
