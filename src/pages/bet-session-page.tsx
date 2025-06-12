@@ -7,9 +7,9 @@ import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import {
   convertDateTime,
-  ConvertMoneyVND,
   listResultHistory,
   listStatusHistory,
+  numberThousandFload,
 } from '@/utils/functions/default-function';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
 import {
@@ -236,8 +236,8 @@ export default function SessionDetailPage({ sessionId }: Props): React.JSX.Eleme
                     {listResultHistory.find((item) => item.value === row.userResult)?.label || ''}
                   </Typography>
                 </TableCell>
-                <TableCell>{ConvertMoneyVND(row.userProfit ?? 0)}</TableCell>
-                <TableCell>{ConvertMoneyVND(row?.systemRevenue ?? 0)} </TableCell>
+                <TableCell>{numberThousandFload(row.userProfit ?? 0)}</TableCell>
+                <TableCell>{numberThousandFload(row?.systemRevenue ?? 0)} </TableCell>
                 <TableCell>{convertDateTime(row?.createdAt?.toString() || '')}</TableCell>
               </TableRow>
             ))}

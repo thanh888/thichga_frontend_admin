@@ -1,24 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { paginateBetHistoryApiByUser } from '@/services/dashboard/bet-history.api';
-import { BetHistoryStatusEnum } from '@/utils/enum/bet-history-status.enum';
 import { BetResultEnum } from '@/utils/enum/bet-result.enum';
 import { TeamEnum } from '@/utils/enum/team.enum';
 import { TypeBetRoomEnum } from '@/utils/enum/type-bet-room.enum';
-import {
-  convertDateTime,
-  ConvertMoneyVND,
-  listStatusHistory,
-  numberThousandFload,
-} from '@/utils/functions/default-function';
+import { convertDateTime, numberThousandFload } from '@/utils/functions/default-function';
 import { BettingHistoryInterface } from '@/utils/interfaces/bet-history.interface';
 import {
   Box,
   Button,
   Card,
-  CircularProgress,
   Divider,
   FormControl,
   InputLabel,
@@ -90,8 +82,6 @@ export default function UserBettingHistoriesTable({ user_id }: Props): React.JSX
   const [orderBy, setOrderBy] = React.useState<keyof BettingHistoryInterface>('createdAt');
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string>('');
-
-  const router = useRouter();
 
   const fetchBets = async () => {
     setIsLoading(true);
@@ -275,7 +265,7 @@ export default function UserBettingHistoriesTable({ user_id }: Props): React.JSX
                         : 'Đang chờ'}
                   </Typography>
                 </TableCell>
-                <TableCell>{ConvertMoneyVND(row?.systemRevenue ?? 0)} </TableCell>
+                <TableCell>{numberThousandFload(row?.systemRevenue ?? 0)} </TableCell>
                 <TableCell>{convertDateTime(row?.createdAt?.toString() || '')}</TableCell>
               </TableRow>
             ))}
