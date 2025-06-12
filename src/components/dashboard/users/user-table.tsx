@@ -54,8 +54,8 @@ export function UsersTable({ isReload, setIsReload }: Readonly<Props>): React.JS
   const [page, setPage] = React.useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [filter, setFilter] = React.useState({ username: '' });
-  const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('username');
+  const [order, setOrder] = React.useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = React.useState<keyof UserFormData>('createdAt');
   const [openEdit, setOpenEdit] = React.useState<UserInterface | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
   const [userToDelete, setUserToDelete] = React.useState<UserInterface | null>(null);
