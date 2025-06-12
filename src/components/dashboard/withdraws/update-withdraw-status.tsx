@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { updateWithdrawStatusApi, updateWithdrawStatusAutoApi } from '@/services/dashboard/withdraw-history.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
-import { ConvertMoneyVND } from '@/utils/functions/default-function';
+import { numberThousandFload } from '@/utils/functions/default-function';
 import { WithdrawTransactionInterface } from '@/utils/interfaces/withdraw-history.interface';
 import {
   Button,
@@ -175,7 +175,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         />
         <TextField
           label="Số tiền"
-          value={ConvertMoneyVND(Number(openDialog?.money) ?? 0) || '0'}
+          value={numberThousandFload(Number(openDialog?.money) ?? 0) || '0'}
           fullWidth
           margin="dense"
           sx={{
