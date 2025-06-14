@@ -230,7 +230,7 @@ export default function HistoryOptionExGamePage(): React.JSX.Element {
                           ? '#4caf50' // xanh lá
                           : result.value === BetResultEnum.LOSE
                             ? '#f44336' // đỏ
-                            : result.value === BetResultEnum.REFUDNED
+                            : result.value === BetResultEnum.REFUNDED
                               ? '#2196f3' // xanh dương
                               : '#9e9e9e'; // xám cho mặc định
 
@@ -251,7 +251,7 @@ export default function HistoryOptionExGamePage(): React.JSX.Element {
                           ? '#4caf50' // xanh lá
                           : result.value === BetResultEnum.LOSE
                             ? '#f44336' // đỏ
-                            : result.value === BetResultEnum.REFUDNED
+                            : result.value === BetResultEnum.REFUNDED
                               ? '#2196f3' // xanh dương
                               : '#9e9e9e'; // xám cho mặc định
 
@@ -272,7 +272,7 @@ export default function HistoryOptionExGamePage(): React.JSX.Element {
                           ? '#4caf50' // xanh lá
                           : result.value === BetResultEnum.LOSE
                             ? '#f44336' // đỏ
-                            : result.value === BetResultEnum.REFUDNED
+                            : result.value === BetResultEnum.REFUNDED
                               ? '#2196f3' // xanh dương
                               : '#9e9e9e'; // xám cho mặc định
 

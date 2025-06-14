@@ -2,16 +2,18 @@
 
 import * as React from 'react';
 import { useParams } from 'next/navigation';
-import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
+import { createBillByAdminApi, DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
 import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
 import { convertDateTimeVN } from '@/utils/functions/default-function';
+import { Add } from '@mui/icons-material';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
   Button,
   Paper,
+  Stack,
   Tab,
   Table,
   TableBody,
@@ -25,7 +27,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { toast } from 'react-toastify';
 
+import { useUser } from '@/hooks/use-user';
 import UpdateDepositStatusComponent from '@/components/dashboard/deposites/update-deposit-status';
 
 // Định nghĩa interface cho dữ liệu bảng
@@ -87,8 +95,14 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     docs: [],
     totalDocs: 0,
   });
+
+  const [mode, setMode] = React.useState<DepositModeEnum | any>(DepositModeEnum.MANUAL);
+
   const [openDialog, setOpenDialog] = React.useState<any>(null);
   const [loading, setLoading] = React.useState<boolean>(false);
+  const [openAddDialog, setOpenAddDialog] = React.useState(false);
+  const [addMoney, setAddMoney] = React.useState('');
+  const [addFeedback, setAddFeedback] = React.useState('');
 
   const statusLabels: { [key in DepositStatusEnum]: string } = {
     [DepositStatusEnum.PENDING]: 'Chờ xử lý',
@@ -96,17 +110,20 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     [DepositStatusEnum.REJECT]: 'Đã từ chối',
   };
 
+  const { user } = useUser();
+
   // Get status from tab value
   const getStatus = (tab: number) => {
     if (tab === 0) {
       return DepositStatusEnum.PENDING;
     } else if (tab === 1) {
+      return DepositStatusEnum.PENDING;
+    } else if (tab === 2) {
       return DepositStatusEnum.SUCCESS;
     } else {
       return DepositStatusEnum.REJECT;
     }
   };
-
   const [searchTerm, setSearchTerm] = React.useState<string>('');
 
   // Handle search
@@ -120,7 +137,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${DepositModeEnum.MANUAL}&user_id=${user_id}&search=${encodeURIComponent(searchTerm)}`;
+      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${mode}&user_id=${user_id}&search=${encodeURIComponent(searchTerm)}`;
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
@@ -142,12 +159,21 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [tabValue, page, rowsPerPage, sortField, sortOrder, searchTerm]);
+  }, [tabValue, page, rowsPerPage, sortField, sortOrder, searchTerm, mode]);
 
+  // Handle tab change
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setPage(0);
+    // Cập nhật mode tương ứng với tab
+    if (newValue === 0) {
+      setMode(DepositModeEnum.MANUAL);
+    } else if (newValue === 1) {
+      setMode(DepositModeEnum.AUTO);
+    } else {
+      setMode('');
+    }
   };
 
   // Handle sorting
@@ -160,6 +186,41 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
   // Open dialog for status update
   const handleOpenDialog = (data: any) => {
     setOpenDialog(data);
+  };
+
+  // Handler for open add dialog
+  const handleOpenAddDialog = () => {
+    setOpenAddDialog(true);
+    setAddMoney('');
+    setAddFeedback('');
+  };
+
+  const handleCloseAddDialog = () => {
+    setOpenAddDialog(false);
+  };
+
+  const handleConfirmAdd = async () => {
+    const formData = {
+      money: Number(addMoney),
+      userID: user_id,
+      mode: DepositModeEnum.MANUAL,
+      status: DepositStatusEnum.SUCCESS,
+      adminID: user._id,
+      feedback: addFeedback,
+    };
+    try {
+      const response = await createBillByAdminApi('add', formData);
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Thêm bill nạp tiền thành công!');
+      }
+    } catch (error) {
+      console.error('Error adding deposit:', error);
+      return;
+    }
+
+    setOpenAddDialog(false);
+    setIsReload(true);
   };
 
   // Handle page change
@@ -185,9 +246,14 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
       }}
     >
       <Paper sx={{ width: '100%' }}>
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Danh sách nạp tiền
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Danh sách nạp tiền
+          </Typography>
+          <Button variant="outlined" startIcon={<Add />} onClick={handleOpenAddDialog}>
+            Thêm bill
+          </Button>
+        </Box>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -221,7 +287,8 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
             },
           }}
         >
-          <Tab label="Chờ xử lý" />
+          <Tab label="Chờ xử lý(Thủ công)" />
+          <Tab label="Chờ xử lý(Tự động)" />
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
@@ -398,6 +465,36 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
       </Paper>
 
       <UpdateDepositStatusComponent openDialog={openDialog} setOpenDialog={setOpenDialog} setIsReload={setIsReload} />
+
+      <Dialog open={openAddDialog} onClose={handleCloseAddDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Thêm bill nạp tiền</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Số tiền"
+            type="number"
+            value={addMoney}
+            onChange={(e) => setAddMoney(e.target.value)}
+            fullWidth
+            required
+            InputProps={{ inputProps: { min: 0 } }}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          <TextField
+            label="Nội dung"
+            value={addFeedback}
+            onChange={(e) => setAddFeedback(e.target.value)}
+            fullWidth
+            multiline
+            minRows={3}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddDialog}>Hủy</Button>
+          <Button variant="contained" onClick={handleConfirmAdd} disabled={!addMoney}>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

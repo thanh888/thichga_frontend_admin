@@ -1,7 +1,7 @@
 export enum BetResultEnum {
   WIN = 'WIN',
   LOSE = 'LOSE',
-  REFUDNED = 'REFUNDED',
+  REFUNDED = 'REFUNDED',
   CANCEL = 'CANCEL',
   DRAW = 'DRAW',
 }
