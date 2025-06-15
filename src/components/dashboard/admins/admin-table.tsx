@@ -1,14 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { paginateAdminApi } from '@/services/dashboard/user.api';
+import { deleteUserById, paginateAdminApi } from '@/services/dashboard/user.api';
 import { rolesAdmin } from '@/utils/functions/default-function';
+import { UserInterface } from '@/utils/interfaces/user.interface';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import {
   Box,
   Button,
   Card,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   FormControl,
   InputLabel,
@@ -26,6 +32,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { toast } from 'react-toastify';
 
 import EditAdmin from './update-admin.dialog';
 
@@ -50,6 +57,9 @@ export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.J
   const [orderBy, setOrderBy] = React.useState<keyof AdminFormData>('username');
 
   const [openEdit, setOpenEdit] = React.useState<AdminFormData | null>(null);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = React.useState<UserInterface | null>(null);
 
   const fetchAccounts = async () => {
     try {
@@ -98,6 +108,34 @@ export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.J
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0); // Reset về trang đầu tiên
+  };
+
+  const handleOpenDeleteDialog = (user: UserInterface) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete?._id) return;
+    try {
+      const response = await deleteUserById(userToDelete._id);
+      if (response.status === 200 || response.status === 204) {
+        fetchAccounts(); // Refresh the table
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+        toast.success('Xóa người dùng thành công');
+      } else {
+        toast.error('Không thể xóa người dùng, vui lòng thử lại');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      alert(err.response?.data?.message || 'Không thể xóa người dùng, vui lòng thử lại');
+    }
   };
 
   return (
@@ -163,7 +201,7 @@ export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.J
                   <Button variant="contained" color="success" sx={{ mr: 1 }} onClick={() => setOpenEdit(row)}>
                     <DriveFileRenameOutlineIcon />
                   </Button>
-                  <Button variant="contained" color="error">
+                  <Button variant="contained" color="error" onClick={() => handleOpenDeleteDialog(row)}>
                     <DeleteOutlineOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -186,6 +224,27 @@ export function AdminsTable({ isReload, setIsReload }: Readonly<Props>): React.J
       />
 
       <EditAdmin openEdit={openEdit} setOpenEdit={setOpenEdit} setIsReload={setIsReload} />
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Xác nhận xóa người dùng</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Bạn có chắc chắn muốn xóa người dùng "{userToDelete?.username}"? Hành động này không thể hoàn tác.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={handleDeleteUser} color="error" autoFocus>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

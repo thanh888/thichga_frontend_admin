@@ -298,7 +298,9 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                           >
                             {(row.mode === DepositModeEnum.AUTO || row.referenceCode) && row.referenceCode
                               ? 'Tự động'
-                              : `Thủ công`}
+                              : row.status === WithdrawStatusEnum.PENDING
+                                ? 'Chưa xử lý'
+                                : `Thủ công`}
                           </Typography>
                         </TableCell>
                       );
