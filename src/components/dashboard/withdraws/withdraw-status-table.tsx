@@ -23,6 +23,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 import UpdateWithdrawStatusComponent from './update-withdraw-status';
 
@@ -88,6 +91,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(10);
   const [searchTerm, setSearchTerm] = React.useState<string>('');
   const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
+  const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('createdAt');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
@@ -125,6 +129,9 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       if (usernameFilter) {
         query += `&username=${encodeURIComponent(usernameFilter)}`;
       }
+      if (dateFilter) {
+        query += `&date=${encodeURIComponent(dateFilter)}`;
+      }
       const response = await WithdrawByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({
@@ -149,7 +156,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchWithdraws();
-  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
+  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter, dateFilter]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -254,6 +261,7 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             value={searchTerm}
             onChange={handleSearch}
             fullWidth
+            sx={{ flex: 1 }}
           />
           <TextField
             label="Lọc theo Username"
@@ -263,7 +271,29 @@ const WithdrawStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             value={usernameFilter}
             onChange={handleUsernameFilter}
             fullWidth
+            sx={{ flex: 1 }}
           />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker
+                value={dateFilter ? dayjs(dateFilter) : null}
+                onChange={(e) => setDateFilter(e ? e.format('YYYY-MM-DD') : '')}
+                label="Lọc theo ngày"
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              {dateFilter && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDateFilter('')}
+                  sx={{ minWidth: 0, px: 1, height: 40 }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </Box>
+          </LocalizationProvider>
         </Box>
         <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-status-table">

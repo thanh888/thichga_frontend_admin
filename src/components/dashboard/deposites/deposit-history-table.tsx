@@ -21,6 +21,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 import UpdateDepositStatusComponent from './update-deposit-status';
 
@@ -83,6 +86,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   });
 
   const [openDialog, setOpenDialog] = React.useState<any>(null);
+  const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
 
   const statusLabels: { [key in DepositStatusEnum]: string } = {
     [DepositStatusEnum.PENDING]: 'Chờ xử lý',
@@ -98,10 +102,11 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       if (usernameFilter) {
         query += `&username=${encodeURIComponent(usernameFilter)}`;
       }
+      if (dateFilter) {
+        query += `&date=${encodeURIComponent(dateFilter)}`;
+      }
       const response = await paginate(query);
       if (response.status === 200 || response.status === 201) {
-        // Transform userID and adminID to usernames
-
         setData({
           ...response.data,
           docs: response.data.docs,
@@ -128,7 +133,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter, dateFilter]);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,6 +187,7 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             variant="outlined"
             size="small"
             fullWidth
+            sx={{ flex: 1 }}
             value={searchTerm}
             onChange={handleSearch}
           />
@@ -191,9 +197,31 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             variant="outlined"
             size="small"
             fullWidth
+            sx={{ flex: 1 }}
             value={usernameFilter}
             onChange={handleUsernameFilter}
           />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker
+                value={dateFilter ? dayjs(dateFilter) : null}
+                onChange={(e) => setDateFilter(e ? e.format('YYYY-MM-DD') : '')}
+                label="Lọc theo ngày"
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              {dateFilter && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDateFilter('')}
+                  sx={{ minWidth: 0, px: 1, height: 40 }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </Box>
+          </LocalizationProvider>
         </Box>
         <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-history-table">

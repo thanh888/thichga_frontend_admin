@@ -59,6 +59,8 @@ export const listStatusHistory = [
 export const listResultHistory = [
   { value: BetResultEnum.WIN, label: 'Thắng' },
   { value: BetResultEnum.LOSE, label: 'Thua' },
+  { value: BetResultEnum.DRAW, label: 'Hoàn tiền' },
+  { value: BetResultEnum.CANCEL, label: 'Hoàn tiền' },
   { value: BetResultEnum.REFUNDED, label: 'Hoàn tiền' },
 ] as const;
 

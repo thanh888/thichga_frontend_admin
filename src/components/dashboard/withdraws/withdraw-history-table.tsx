@@ -21,6 +21,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 import UpdateWithdrawStatusComponent from './update-withdraw-status';
 
@@ -94,6 +97,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
     totalDocs: 0,
   });
   const [openDialog, setOpenDialog] = React.useState<any | null>(null);
+  const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
@@ -109,6 +113,9 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       let query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&sort=${sortQuery}`;
       if (usernameFilter) {
         query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
+      if (dateFilter) {
+        query += `&date=${encodeURIComponent(dateFilter)}`;
       }
       const response = await WidthdrawPaginate(query);
       if (response.status === 200 || response.status === 201) {
@@ -135,7 +142,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
 
   React.useEffect(() => {
     fetchWithdraws();
-  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
+  }, [page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter, dateFilter]);
 
   // Handle search
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +205,7 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             fullWidth
             value={searchTerm}
             onChange={handleSearch}
+            sx={{ flex: 1 }}
           />
           <TextField
             label="Lọc theo Username"
@@ -207,7 +215,29 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
             fullWidth
             value={usernameFilter}
             onChange={handleUsernameFilter}
+            sx={{ flex: 1 }}
           />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker
+                value={dateFilter ? dayjs(dateFilter) : null}
+                onChange={(e) => setDateFilter(e ? e.format('YYYY-MM-DD') : '')}
+                label="Lọc theo ngày"
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              {dateFilter && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDateFilter('')}
+                  sx={{ minWidth: 0, px: 1, height: 40 }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </Box>
+          </LocalizationProvider>
         </Box>
         <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-history-table">
@@ -277,14 +307,16 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
                         <TableCell key={column.id} align={column.align}>
                           <Typography
                             variant="caption"
-                            bgcolor={row.mode === DepositModeEnum.AUTO || row.referenceCode ? '#4caf50 ' : '#ff9800 '}
-                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16, whiteSpace: 'nowrap' }}
+                            bgcolor={
+                              row.status === WithdrawStatusEnum.SUCCESS
+                                ? '#1de9b6'
+                                : row.status === WithdrawStatusEnum.REJECT
+                                  ? '#e57373'
+                                  : '#bdbdbd'
+                            }
+                            sx={{ p: 1, borderRadius: 1, fontWeight: 500, fontSize: 16 }}
                           >
-                            {(row.mode === DepositModeEnum.AUTO || row.referenceCode) && row.referenceCode
-                              ? 'Tự động'
-                              : row.status === WithdrawStatusEnum.PENDING
-                                ? 'Chưa xử lý'
-                                : `Thủ công`}
+                            {statusLabels[row.status as WithdrawStatusEnum]}
                           </Typography>
                         </TableCell>
                       );

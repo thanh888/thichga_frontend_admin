@@ -31,6 +31,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 
 import { useUser } from '@/hooks/use-user';
@@ -103,6 +106,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
   const [openAddDialog, setOpenAddDialog] = React.useState(false);
   const [addMoney, setAddMoney] = React.useState('');
   const [addFeedback, setAddFeedback] = React.useState('');
+  const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
 
   const statusLabels: { [key in DepositStatusEnum]: string } = {
     [DepositStatusEnum.PENDING]: 'Chờ xử lý',
@@ -137,7 +141,10 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
     try {
       const status = getStatus(tabValue) ?? DepositStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
-      const query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${mode}&user_id=${user_id}&search=${encodeURIComponent(searchTerm)}`;
+      let query = `limit=${rowsPerPage}&skip=${page + 1}&status=${status}&sort=${sortQuery}&mode=${mode}&user_id=${user_id}&search=${encodeURIComponent(searchTerm)}`;
+      if (dateFilter) {
+        query += `&date=${encodeURIComponent(dateFilter)}`;
+      }
       const response = await DepositByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
@@ -159,7 +166,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
 
   React.useEffect(() => {
     fetchDeposits();
-  }, [tabValue, page, rowsPerPage, sortField, sortOrder, searchTerm, mode]);
+  }, [tabValue, page, rowsPerPage, sortField, sortOrder, searchTerm, mode, dateFilter]);
 
   // Handle tab change
   // Handle tab change
@@ -292,16 +299,39 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
           <Tab label="Thành công" />
           <Tab label="Đã từ chối" />
         </Tabs>
-        <TextField
-          label="Tìm kiếm"
-          placeholder="Tìm theo mã, nội dung..."
-          variant="outlined"
-          size="small"
-          value={searchTerm}
-          onChange={handleSearch}
-          fullWidth
-          sx={{ my: 2 }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, px: 2, my: 2 }}>
+          <TextField
+            label="Tìm kiếm"
+            placeholder="Tìm theo mã, nội dung..."
+            variant="outlined"
+            size="small"
+            fullWidth
+            sx={{ flex: 1 }}
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker
+                value={dateFilter ? dayjs(dateFilter) : null}
+                onChange={(e) => setDateFilter(e ? e.format('YYYY-MM-DD') : '')}
+                label="Lọc theo ngày"
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              {dateFilter && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDateFilter('')}
+                  sx={{ minWidth: 0, px: 1, height: 40 }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </Box>
+          </LocalizationProvider>
+        </Box>
         <TableContainer sx={{ maxHeight: 560, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="deposit-status-table">
             <TableHead>

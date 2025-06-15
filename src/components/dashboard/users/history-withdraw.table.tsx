@@ -23,6 +23,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 import UpdateWithdrawStatusComponent from '../withdraws/update-withdraw-status';
 
@@ -95,6 +98,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
     totalDocs: 0,
   });
   const [openDialog, setOpenDialog] = React.useState<any>(null);
+  const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
 
   const statusLabels: { [key in WithdrawStatusEnum]: string } = {
     [WithdrawStatusEnum.PENDING]: 'Chờ xử lý',
@@ -121,8 +125,14 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
       const status = getStatus(tabValue) ?? WithdrawStatusEnum.PENDING;
       const sortQuery = sortOrder === 'asc' ? sortField : `-${sortField}`;
       let query = `limit=${rowsPerPage}&skip=${page + 1}&search=${searchTerm}&status=${status}&sort=${sortQuery}`;
+      if (user_id) {
+        query += `&user_id=${user_id}`;
+      }
       if (usernameFilter) {
         query += `&username=${encodeURIComponent(usernameFilter)}`;
+      }
+      if (dateFilter) {
+        query += `&date=${encodeURIComponent(dateFilter)}`;
       }
       const response = await WithdrawByStatusApi(query);
       if (response.status === 200 || response.status === 201) {
@@ -148,7 +158,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
 
   React.useEffect(() => {
     fetchWithdraws();
-  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter]);
+  }, [tabValue, page, rowsPerPage, searchTerm, sortField, sortOrder, usernameFilter, dateFilter, user_id]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -253,6 +263,7 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
             value={searchTerm}
             onChange={handleSearch}
             fullWidth
+            sx={{ flex: 1 }}
           />
           <TextField
             label="Lọc theo Username"
@@ -262,7 +273,29 @@ const UserWithdrawTable: React.FC<Props> = ({ user_id }) => {
             value={usernameFilter}
             onChange={handleUsernameFilter}
             fullWidth
+            sx={{ flex: 1 }}
           />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DatePicker
+                value={dateFilter ? dayjs(dateFilter) : null}
+                onChange={(e) => setDateFilter(e ? e.format('YYYY-MM-DD') : '')}
+                label="Lọc theo ngày"
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              {dateFilter && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setDateFilter('')}
+                  sx={{ minWidth: 0, px: 1, height: 40 }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </Box>
+          </LocalizationProvider>
         </Box>
         <TableContainer sx={{ maxHeight: 440, overflowX: 'auto' }}>
           <Table stickyHeader aria-label="withdraw-status-table">
