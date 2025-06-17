@@ -5,6 +5,7 @@ import { paginate } from '@/services/dashboard/deposit-history.api';
 import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
+import { numberThousandFload } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -80,9 +81,16 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
+  const [data, setData] = React.useState<{
+    docs: DepositHistoryFormData[];
+    totalDocs: number;
+    totalMoneyCurrentPage: number;
+    totalMoneyAll: number;
+  }>({
     docs: [],
     totalDocs: 0,
+    totalMoneyCurrentPage: 0,
+    totalMoneyAll: 0,
   });
 
   const [openDialog, setOpenDialog] = React.useState<any>(null);
@@ -112,11 +120,11 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
           docs: response.data.docs,
         });
       } else {
-        setData({ docs: [], totalDocs: 0 });
+        setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
       }
     } catch (error) {
       console.error('Failed to fetch deposit history:', error);
-      setData({ docs: [], totalDocs: 0 });
+      setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
     }
   };
 
@@ -177,9 +185,18 @@ const DepositHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       }}
     >
       <Paper sx={{ width: '100%' }}>
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Danh sách tất cả yêu cầu nạp tiền
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Danh sách nạp tiền
+          </Typography>
+
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng TC trang hiện tại: {numberThousandFload(data?.totalMoneyCurrentPage ?? 0)}
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng tất cả: {numberThousandFload(data?.totalMoneyAll ?? 0)}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 2, px: 2, mb: 2 }}>
           <TextField
             label="Tìm kiếm"

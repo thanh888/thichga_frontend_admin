@@ -5,7 +5,7 @@ import { DepositByStatusApi } from '@/services/dashboard/deposit-history.api';
 import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
-import { convertDateTimeVN } from '@/utils/functions/default-function';
+import { convertDateTimeVN, numberThousandFload } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -90,9 +90,16 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
 
-  const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
+  const [data, setData] = React.useState<{
+    docs: DepositHistoryFormData[];
+    totalDocs: number;
+    totalMoneyCurrentPage: number;
+    totalMoneyAll: number;
+  }>({
     docs: [],
     totalDocs: 0,
+    totalMoneyCurrentPage: 0,
+    totalMoneyAll: 0,
   });
   const [openDialog, setOpenDialog] = React.useState<any>(null);
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -133,11 +140,11 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
       } else {
-        setData({ docs: [], totalDocs: 0 });
+        setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
       }
     } catch (error) {
       console.error('Failed to fetch deposit history:', error);
-      setData({ docs: [], totalDocs: 0 });
+      setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
     } finally {
       setLoading(false);
     }
@@ -215,9 +222,17 @@ const DepositStatusTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       }}
     >
       <Paper sx={{ width: '100%' }}>
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Danh sách nạp tiền
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Danh sách nạp tiền
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng TC trang hiện tại: {numberThousandFload(data?.totalMoneyCurrentPage ?? 0)}
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng tất cả: {numberThousandFload(data?.totalMoneyAll ?? 0)}
+          </Typography>
+        </Box>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}

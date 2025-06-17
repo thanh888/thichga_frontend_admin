@@ -4,7 +4,7 @@ import * as React from 'react';
 import { WidthdrawPaginate } from '@/services/dashboard/withdraw-history.api';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { WithdrawStatusEnum } from '@/utils/enum/withdraw-status.enum';
-import { convertDateTimeVN } from '@/utils/functions/default-function';
+import { convertDateTimeVN, numberThousandFload } from '@/utils/functions/default-function';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
   Box,
@@ -92,9 +92,16 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
   const [usernameFilter, setUsernameFilter] = React.useState<string>(''); // Thêm filter username
   const [sortField, setSortField] = React.useState<keyof WithdrawHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [data, setData] = React.useState<{ docs: WithdrawHistoryFormData[]; totalDocs: number }>({
+  const [data, setData] = React.useState<{
+    docs: WithdrawHistoryFormData[];
+    totalDocs: number;
+    totalMoneyCurrentPage?: number;
+    totalMoneyAll?: number;
+  }>({
     docs: [],
     totalDocs: 0,
+    totalMoneyCurrentPage: 0,
+    totalMoneyAll: 0,
   });
   const [openDialog, setOpenDialog] = React.useState<any | null>(null);
   const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
@@ -125,11 +132,11 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
         };
         setData(transformedData);
       } else {
-        setData({ docs: [], totalDocs: 0 });
+        setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
       }
     } catch (error) {
       console.error('Failed to fetch withdraw history:', error);
-      setData({ docs: [], totalDocs: 0 });
+      setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
     }
   };
 
@@ -193,9 +200,17 @@ const WithdrawHistoryTable: React.FC<Props> = ({ isReload, setIsReload }) => {
       }}
     >
       <Paper sx={{ width: '100%' }}>
-        <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
-          Lịch sử rút tiền
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Lịch sử rút tiền
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng TC trang hiện tại: {numberThousandFload(data?.totalMoneyCurrentPage ?? 0)}
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng tất cả: {numberThousandFload(data?.totalMoneyAll ?? 0)}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 2, px: 2, mb: 2 }}>
           <TextField
             label="Tìm kiếm"

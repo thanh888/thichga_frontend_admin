@@ -6,7 +6,7 @@ import { createBillByAdminApi, DepositByStatusApi } from '@/services/dashboard/d
 import { DepositMethod } from '@/utils/enum/deposit-method.enum';
 import { DepositModeEnum } from '@/utils/enum/deposit-mode.enum';
 import { DepositStatusEnum } from '@/utils/enum/deposit-status.enum';
-import { convertDateTimeVN } from '@/utils/functions/default-function';
+import { convertDateTimeVN, numberThousandFload } from '@/utils/functions/default-function';
 import { Add } from '@mui/icons-material';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import {
@@ -94,9 +94,16 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(5);
   const [sortField, setSortField] = React.useState<keyof DepositHistoryFormData>('code');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
-  const [data, setData] = React.useState<{ docs: DepositHistoryFormData[]; totalDocs: number }>({
+  const [data, setData] = React.useState<{
+    docs: DepositHistoryFormData[];
+    totalDocs: number;
+    totalMoneyCurrentPage: number;
+    totalMoneyAll: number;
+  }>({
     docs: [],
     totalDocs: 0,
+    totalMoneyCurrentPage: 0,
+    totalMoneyAll: 0,
   });
 
   const [mode, setMode] = React.useState<DepositModeEnum | any>(DepositModeEnum.MANUAL);
@@ -149,11 +156,11 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
       if (response.status === 200 || response.status === 201) {
         setData({ ...response.data, docs: response.data.docs });
       } else {
-        setData({ docs: [], totalDocs: 0 });
+        setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
       }
     } catch (error) {
       console.error('Failed to fetch deposit history:', error);
-      setData({ docs: [], totalDocs: 0 });
+      setData({ docs: [], totalDocs: 0, totalMoneyCurrentPage: 0, totalMoneyAll: 0 });
     }
   };
 
@@ -256,6 +263,12 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, mb: 2 }}>
           <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
             Danh sách nạp tiền
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng TC trang hiện tại: {numberThousandFload(data?.totalMoneyCurrentPage ?? 0)}
+          </Typography>
+          <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 2 }}>
+            Tổng tất cả: {numberThousandFload(data?.totalMoneyAll ?? 0)}
           </Typography>
           <Button variant="outlined" startIcon={<Add />} onClick={handleOpenAddDialog}>
             Thêm bill
