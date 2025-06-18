@@ -51,6 +51,7 @@ const statusLabelsOfAuto: { [key in WithdrawStatusEnum]: string } = {
 const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialog, setOpenDialog }) => {
   const [newStatus, setNewStatus] = React.useState<string>('');
   const [feedback, setFeedback] = React.useState<string>('');
+  const [loading, setLoading] = React.useState(false);
 
   const user = useContext(UserContext)?.user;
   const socket = useSocket();
@@ -74,9 +75,10 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       toast.warning('Vui lòng chọn trạng thái khác');
       return;
     }
-
+    setLoading(true);
     try {
       if (!openDialog?._id || !user) {
+        setLoading(false);
         return;
       }
       const formData = {
@@ -122,6 +124,7 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
       console.error('Error updating withdraw status:', error);
       toast.error('Lỗi khi cập nhật trạng thái. Vui lòng thử lại sau.');
     } finally {
+      setLoading(false);
       handleCloseDialog();
     }
   };
@@ -213,11 +216,11 @@ const UpdateWithdrawStatusComponent: React.FC<Props> = ({ setIsReload, openDialo
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseDialog} color="primary">
+        <Button onClick={handleCloseDialog} color="primary" disabled={loading}>
           Hủy
         </Button>
-        <Button onClick={handleUpdateStatus} color="primary" autoFocus>
-          Cập nhật
+        <Button onClick={handleUpdateStatus} color="primary" autoFocus disabled={loading}>
+          {loading ? 'Đang cập nhật...' : 'Cập nhật'}
         </Button>
       </DialogActions>
     </Dialog>

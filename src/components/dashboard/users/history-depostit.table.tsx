@@ -114,6 +114,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
   const [addMoney, setAddMoney] = React.useState('');
   const [addFeedback, setAddFeedback] = React.useState('');
   const [dateFilter, setDateFilter] = React.useState<string>(''); // Thêm filter ngày
+  const [loadingAdd, setLoadingAdd] = React.useState(false);
 
   const statusLabels: { [key in DepositStatusEnum]: string } = {
     [DepositStatusEnum.PENDING]: 'Chờ xử lý',
@@ -214,6 +215,7 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
   };
 
   const handleConfirmAdd = async () => {
+    setLoadingAdd(true);
     const formData = {
       money: Number(addMoney),
       userID: user_id,
@@ -230,11 +232,13 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
       }
     } catch (error) {
       console.error('Error adding deposit:', error);
+      setLoadingAdd(false);
       return;
     }
 
     setOpenAddDialog(false);
     setIsReload(true);
+    setLoadingAdd(false);
   };
 
   // Handle page change
@@ -532,9 +536,11 @@ const UserHitoryDepositsTable: React.FC<Props> = ({ user_id }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAddDialog}>Hủy</Button>
-          <Button variant="contained" onClick={handleConfirmAdd} disabled={!addMoney}>
-            Xác nhận
+          <Button onClick={handleCloseAddDialog} disabled={loadingAdd}>
+            Hủy
+          </Button>
+          <Button variant="contained" onClick={handleConfirmAdd} disabled={!addMoney || loadingAdd}>
+            {loadingAdd ? 'Đang thêm...' : 'Xác nhận'}
           </Button>
         </DialogActions>
       </Dialog>

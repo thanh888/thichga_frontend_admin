@@ -33,6 +33,7 @@ const statusLabels: { [key in DepositStatusEnum]: string } = {
 
 const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog, setOpenDialog }) => {
   const [newStatus, setNewStatus] = React.useState<string>('');
+  const [loading, setLoading] = React.useState(false);
 
   const user = useContext(UserContext)?.user;
   const socket = useSocket();
@@ -57,7 +58,7 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
     if (!user) {
       return;
     }
-
+    setLoading(true);
     try {
       const formData = {
         userID: openDialog?.userID?._id,
@@ -81,6 +82,7 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
       console.error('Error updating deposit status:', error);
       toast.error('Lỗi khi cập nhật trạng thái. Vui lòng thử lại sau.');
     } finally {
+      setLoading(false);
       handleCloseDialog();
     }
   };
@@ -162,11 +164,11 @@ const UpdateDepositStatusComponent: React.FC<Props> = ({ setIsReload, openDialog
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseDialog} color="primary">
+        <Button onClick={handleCloseDialog} color="primary" disabled={loading}>
           Hủy
         </Button>
-        <Button onClick={handleUpdateStatus} color="primary" autoFocus>
-          Cập nhật
+        <Button onClick={handleUpdateStatus} color="primary" autoFocus disabled={loading}>
+          {loading ? 'Đang cập nhật...' : 'Cập nhật'}
         </Button>
       </DialogActions>
     </Dialog>
